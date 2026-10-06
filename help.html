@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#E85D04">
+  <title>Help & Support - Khabar Ghor</title>
+  <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <button class="header-btn back-btn" onclick="history.back()" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h1 class="header-title">Help & Support</h1>
+      </div>
+    </header>
+    <div class="page-content no-nav" style="padding:16px;">
+      <div class="promo-card" style="margin-bottom:12px;">
+        <h4>FAQ</h4>
+        <p style="margin-top:8px;"><strong>How do I order?</strong><br>Browse menu → Add to cart → Checkout → Place order.</p>
+        <p style="margin-top:8px;"><strong>Payment?</strong><br>COD, bKash, Nagad, Rocket — follow instructions after placing order.</p>
+        <p style="margin-top:8px;"><strong>Track order?</strong><br>Orders tab → open order → live status.</p>
+        <p style="margin-top:8px;"><strong>Coupon?</strong><br>Enter code at checkout and tap Apply.</p>
+      </div>
+
+      <div class="promo-card" style="margin-bottom:12px;">
+        <h4>Contact WhatsApp</h4>
+        <p style="margin-top:8px;">Quick support via chat.</p>
+        <a id="help-wa" href="#" class="btn btn-primary btn-sm" style="margin-top:10px;" target="_blank" rel="noopener">Open WhatsApp</a>
+      </div>
+
+      <div class="promo-card">
+        <h4>Send a ticket</h4>
+        <p style="margin-top:6px;font-size:.85rem;color:var(--text-muted)">Login required. Admin will see it in Support tab.</p>
+        <input id="tk-subject" placeholder="Subject *" style="width:100%;padding:12px;margin:8px 0;border:1px solid #eee;border-radius:12px;">
+        <textarea id="tk-msg" rows="3" placeholder="Describe the problem *" style="width:100%;padding:12px;margin:6px 0;border:1px solid #eee;border-radius:12px;"></textarea>
+        <input id="tk-order" placeholder="Order ID (optional)" style="width:100%;padding:12px;margin:6px 0;border:1px solid #eee;border-radius:12px;">
+        <button class="btn btn-primary" id="tk-send" style="width:100%;margin-top:8px;">Submit ticket</button>
+        <p id="tk-status" style="font-size:.85rem;margin-top:8px;"></p>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { SUPPORT_WHATSAPP } from './js/firebase-config.js';
+    import { createSupportTicket } from './js/firestore.js';
+    import { onAuthReady, getCurrentUser } from './js/auth.js';
+    import { showToast } from './js/ui.js';
+
+    const wa = document.getElementById('help-wa');
+    if (wa && SUPPORT_WHATSAPP) {
+      wa.href = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent('Assalamualaikum, support lagbe.')}`;
+    }
+
+    document.getElementById('tk-send').onclick = async () => {
+      const subject = document.getElementById('tk-subject').value.trim();
+      const message = document.getElementById('tk-msg').value.trim();
+      const orderId = document.getElementById('tk-order').value.trim();
+      const status = document.getElementById('tk-status');
+      if (!subject || !message) {
+        status.textContent = 'Subject and message required';
+        status.style.color = '#c62828';
+        return;
+      }
+      const user = await new Promise(r => onAuthReady(r));
+      if (!user) {
+        showToast('Please login first', 'info');
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        await createSupportTicket({
+          userId: user.uid,
+          userEmail: user.email || '',
+          subject,
+          message,
+          orderId: orderId || null
+        });
+        status.textContent = 'Ticket submitted. We will get back to you.';
+        status.style.color = '#2e7d32';
+        document.getElementById('tk-subject').value = '';
+        document.getElementById('tk-msg').value = '';
+        document.getElementById('tk-order').value = '';
+        showToast('Ticket sent', 'success');
+      } catch (e) {
+        status.textContent = 'Failed: ' + e.message;
+        status.style.color = '#c62828';
+      }
+    };
+  </script>
+</body>
+</html>

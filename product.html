@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#E85D04">
+  <title>Product - Khabar Ghor</title>
+  <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="product-content">
+      <div class="loading-container" style="min-height:60vh;">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    </div>
+
+    <!-- Sticky bottom action bar -->
+    <div class="product-action-bar hidden" id="product-action-bar">
+      <div class="product-qty-wrap">
+        <button class="qty-btn" id="pd-minus" aria-label="Decrease">−</button>
+        <span class="qty-value" id="pd-qty">1</span>
+        <button class="qty-btn" id="pd-plus" aria-label="Increase">+</button>
+      </div>
+      <button class="btn btn-primary product-add-btn" id="pd-add">Add to Cart</button>
+      <button class="btn btn-outline product-buy-btn" id="pd-buy">Buy Now</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/product.js"></script>
+</body>
+</html>

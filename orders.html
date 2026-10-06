@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#E85D04">
+  <title>My Orders - Khabar Ghor</title>
+  <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="header-title">My Orders</h1>
+      </div>
+    </header>
+
+    <div class="orders-tabs" id="orders-tabs">
+      <button class="orders-tab active" data-tab="all">All</button>
+      <button class="orders-tab" data-tab="processing">Processing</button>
+      <button class="orders-tab" data-tab="completed">Completed</button>
+      <button class="orders-tab" data-tab="cancelled">Cancelled</button>
+    </div>
+
+    <div class="page-content">
+      <div class="orders-list" id="orders-list">
+        <!-- Loaded dynamically -->
+      </div>
+    </div>
+
+    <div id="bottom-nav"></div>
+  </div>
+  <script type="module" src="js/orders.js"></script>
+</body>
+</html>

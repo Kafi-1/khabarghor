@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#E85D04">
+  <title>Order Placed - Khabar Ghor</title>
+  <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app-container">
+    <div class="success-page">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="success-illustration">
+        <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="50" y="40" width="100" height="70" rx="12" fill="#FF6B35" opacity="0.15"/>
+          <rect x="60" y="50" width="80" height="50" rx="8" fill="#E85D04"/>
+          <circle cx="100" cy="75" r="15" fill="white" opacity="0.3"/>
+          <path d="M85 75h30M100 60v30" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="70" cy="130" r="8" fill="#F48C06"/>
+          <circle cx="130" cy="130" r="8" fill="#F48C06"/>
+        </svg>
+      </div>
+      <h1>Order Placed!</h1>
+      <p>Thank you for using Khabar Ghor. Enjoy your meal! 🎉</p>
+      <div class="success-actions">
+        <a href="#" class="btn btn-primary btn-block" id="view-order-btn">View Order</a>
+        <a href="index.html" class="btn btn-outline btn-block">Order Again</a>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { getQueryParam } from './js/utils.js';
+    const id = getQueryParam('id');
+    document.getElementById('view-order-btn').href = id ? `order-tracking.html?id=${id}` : 'orders.html';
+  </script>
+</body>
+</html>

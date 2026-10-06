@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // CHANGE: put your admin email(s) here (same as ADMIN_EMAILS in js/firebase-config.js)
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@gmail.com'];
+    }
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isRestaurantOwner() {
+      return isLoggedIn() && userDoc().role == 'restaurant';
+    }
+
+    function isRider() {
+      return isLoggedIn() && userDoc().role == 'rider';
+    }
+
+    // Public catalogue
+    match /restaurants/{id} {
+      allow read: if true;
+      // Admin full write; restaurant owner can update their own shop
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (isRestaurantOwner() && resource.data.ownerId == request.auth.uid);
+    }
+
+    match /products/{id} {
+      allow read: if true;
+      allow create: if isAdmin()
+        || (isRestaurantOwner() && request.resource.data.restaurantId == userDoc().restaurantId);
+      allow update, delete: if isAdmin()
+        || (isRestaurantOwner() && resource.data.restaurantId == userDoc().restaurantId);
+    }
+
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isLoggedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isLoggedIn() && request.auth.uid == userId;
+      // User can update own profile (not role); admin can set role
+      allow update: if isLoggedIn() && (
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'restaurantId']))
+        || isAdmin()
+      );
+    }
+
+    match /orders/{orderId} {
+      allow create: if isLoggedIn() && request.resource.data.userId == request.auth.uid;
+
+      allow read: if isLoggedIn() && (
+        resource.data.userId == request.auth.uid
+        || isAdmin()
+        || (isRestaurantOwner() && resource.data.restaurantId == userDoc().restaurantId)
+        || (isRider() && (resource.data.riderId == request.auth.uid || resource.data.status == 'ready'))
+      );
+
+      // Admin, restaurant owner (own shop orders), or assigned rider can update
+      allow update: if isLoggedIn() && (
+        isAdmin()
+        || (isRestaurantOwner() && resource.data.restaurantId == userDoc().restaurantId)
+        || (isRider() && (resource.data.riderId == request.auth.uid || resource.data.status == 'ready'))
+      );
+    }
+
+    match /favorites/{id} {
+      allow create: if isLoggedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if isLoggedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Promos — public read, admin write
+    match /promos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /coupons/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isLoggedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /support_tickets/{id} {
+      allow create: if isLoggedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isLoggedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow update: if isAdmin();
+    }
+  }
+}
