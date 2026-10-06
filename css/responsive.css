@@ -1,0 +1,188 @@
+/* ============================================================
+   Khabar Ghor - Responsive Styles
+   ============================================================ */
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .app-container {
+    max-width: 720px;
+  }
+
+  .bottom-nav {
+    max-width: 720px;
+  }
+
+  .restaurant-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .restaurant-hero {
+    height: 280px;
+  }
+
+  .menu-content {
+    max-width: 100%;
+  }
+
+  .floating-cart {
+    max-width: 688px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  body {
+    background: #F0F0F0;
+  }
+
+  .app-container {
+    max-width: 960px;
+    margin: 0 auto;
+    min-height: 100vh;
+    box-shadow: 0 0 60px rgba(0,0,0,0.08);
+  }
+
+  .bottom-nav {
+    max-width: 960px;
+  }
+
+  .restaurant-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .home-header {
+    padding: 20px 24px;
+  }
+
+  .section {
+    padding: 12px 24px 20px;
+  }
+
+  .categories-section {
+    padding: 8px 24px 16px;
+  }
+
+  .promo-banner {
+    margin: 16px 24px;
+    height: 200px;
+  }
+
+  .restaurant-list {
+    padding: 0 24px;
+  }
+
+  .restaurant-list .restaurant-card {
+    flex-direction: row;
+  }
+
+  .restaurant-list .restaurant-card-image {
+    width: 140px;
+    height: 120px;
+  }
+
+  .food-card {
+    padding: 16px;
+  }
+
+  .food-card-image {
+    width: 110px;
+    height: 110px;
+  }
+
+  .cart-items,
+  .payment-methods,
+  .orders-list {
+    padding: 20px 24px;
+  }
+
+  .profile-header {
+    padding: 32px 24px;
+  }
+
+  .profile-menu-item {
+    padding: 16px 24px;
+  }
+
+  /* Desktop: show side-by-side for restaurant detail */
+  .menu-content {
+    max-width: 700px;
+  }
+
+  .floating-cart {
+    max-width: 928px;
+  }
+
+  /* Modal centered on desktop */
+  .modal-overlay {
+    align-items: center;
+  }
+
+  .modal {
+    border-radius: var(--radius-xl);
+    max-width: 440px;
+    transform: scale(0.95);
+  }
+
+  .modal-overlay.show .modal {
+    transform: scale(1);
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1280px) {
+  .app-container {
+    max-width: 1100px;
+  }
+
+  .bottom-nav {
+    max-width: 1100px;
+  }
+
+  .restaurant-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .floating-cart {
+    max-width: 1068px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .restaurant-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .splash-title {
+    font-size: 2rem;
+  }
+}
+
+/* Safe area for notched phones */
+@supports (padding: max(0px)) {
+  .bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  .app-header {
+    padding-top: max(env(safe-area-inset-top), 12px);
+  }
+}
