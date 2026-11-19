@@ -62,6 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const action = item.dataset.action;
       if (action === 'help') { window.location.href = 'help.html'; return; }
+      if (action === 'address') {
+        const user = getCurrentUser();
+        if (!user) { window.location.href = 'login.html'; return; }
+        (async () => {
+          const saved = JSON.parse(localStorage.getItem('khabarghor_customer') || '{}');
+          const current = await getUserProfile(user.uid).catch(() => null);
+          const next = prompt('Delivery address:', current?.address || saved.address || '');
+          if (next === null) return;
+          const address = next.trim();
+          try {
+            await updateUserProfile(user.uid, { address });
+            localStorage.setItem('khabarghor_customer', JSON.stringify({ ...saved, name: current?.name || user.displayName || '', phone: current?.phone || '', address }));
+            showToast('Delivery address saved', 'success');
+          } catch (err) { showToast('Could not save address: ' + err.message, 'error'); }
+        })();
+        return;
+      }
       if (action === 'edit-profile') {
         const user = getCurrentUser();
         if (!user) { window.location.href = 'login.html'; return; }
