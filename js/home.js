@@ -2,13 +2,14 @@
  * Khabar Ghor - Home Page
  * Shows the PRODUCTS added from the admin panel (admin.html). No demo data.
  */
-import { renderBottomNav, renderProductTile, renderCategoryItem, renderSkeletonCards, showToast } from './ui.js';
-import { getCategories, getProducts, getPromos } from './firestore.js';
+import { renderBottomNav, renderProductTile, renderCategoryItem, renderSkeletonCards, renderRestaurantCard } from './ui.js';
+import { getCategories, getProducts, getPromos, getRestaurants } from './firestore.js';
 import { isFirebaseConfigured } from './firebase-config.js';
 import { debounce, showEmpty, showError, escapeHtml } from './utils.js';
 import { addToCart, updateCartBadge } from './cart.js';
 
 let allProducts = [];
+let allRestaurants = [];
 let activeCategory = 'All';
 let searchTerm = '';
 
@@ -49,11 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   grid.innerHTML = renderSkeletonCards(4);
   try {
-    const [products] = await Promise.all([
+    const [products, restaurants] = await Promise.all([
       getProducts(),
+      getRestaurants(),
       loadHomeBanner()
     ]);
     allProducts = products;
+    allRestaurants = restaurants;
+    renderRestaurants();
     await loadCategories();
     render();
   } catch (err) {
@@ -95,6 +99,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
+
+function renderRestaurants() {
+  const section = document.getElementById('restaurants-section');
+  const list = document.getElementById('home-restaurants');
+  if (!section || !list) return;
+  if (!allRestaurants.length) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  list.innerHTML = allRestaurants.slice(0, 4)
+    .map(restaurant => renderRestaurantCard(restaurant, { showFavourite: false }))
+    .join('');
+}
 
 async function loadHomeBanner() {
   const el = document.getElementById('home-banner');
