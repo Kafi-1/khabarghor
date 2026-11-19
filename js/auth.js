@@ -41,6 +41,15 @@ onAuthStateChanged(auth, async (user) => {
   authReady = true;
 
   if (user) {
+    // Suspended accounts must not continue using customer/shop/rider pages.
+    try {
+      const existingProfile = await getUserProfile(user.uid);
+      if (existingProfile?.disabled === true) {
+        await signOut(auth);
+        showToast('This account is suspended. Contact support.', 'error');
+        return;
+      }
+    } catch (e) { console.warn('Account status check failed:', e); }
     // Ensure profile exists
     try {
       const profile = await getUserProfile(user.uid);

@@ -10,7 +10,7 @@ import {
   getCategories, saveCategory, deleteCategory,
   getAllOrders, updateOrderStatus, setUserRole, getUserProfile, getAllUsers,
   mapsLink, getCoupons, saveCoupon, deleteCoupon, getPromos, savePromo, deletePromo,
-  getAllTickets, updateTicketStatus
+  getAllTickets, updateTicketStatus, updateUserProfile
 } from './firestore.js';
 import { escapeHtml as esc, formatCurrency, formatDateTime } from './utils.js';
 import { showToast } from './ui.js';
@@ -68,8 +68,7 @@ async function load() {
   try {
     [cache.restaurants, cache.categories] = await Promise.all([getRestaurants({ includeInactive: true }), getCategories().catch(() => [])]);
     if (tab === 'dashboard') {
-      cache.orders = await getAllOrders();
-      cache.products = await getProducts({ includeUnavailable: true });
+      [cache.orders, cache.products, cache.users] = await Promise.all([getAllOrders(), getProducts({ includeUnavailable: true }), getAllUsers()]);
       renderDashboard(view);
     } else if (tab === 'products') { cache.products = await getProducts({ includeUnavailable: true }); renderProducts(view); }
     else if (tab === 'restaurants') renderRestaurants(view);
@@ -265,6 +264,8 @@ function renderDashboard(view) {
       <div class="dash-card"><div class="dash-val">${completed.length}</div><div class="dash-lbl">Completed</div></div>
       <div class="dash-card"><div class="dash-val">${cache.restaurants.length}</div><div class="dash-lbl">Restaurants</div></div>
       <div class="dash-card"><div class="dash-val">${cache.products.length}</div><div class="dash-lbl">Products</div></div>
+      <div class="dash-card"><div class="dash-val">${cache.users.length}</div><div class="dash-lbl">Registered users</div></div>
+      <div class="dash-card"><div class="dash-val">${cache.users.filter(u => u.role === 'rider' && u.riderOnline === true && u.disabled !== true).length}</div><div class="dash-lbl">Riders online</div></div>
       <div class="dash-card"><div class="dash-val">${todayOrders.length}</div><div class="dash-lbl">Orders today</div></div>
     </div>
     <div class="adm-box">
@@ -324,6 +325,7 @@ function renderUsers(view) {
             <strong>${esc(u.name || u.email || 'User')}</strong>
             <span class="adm-badge ${role === 'restaurant' ? '' : role === 'rider' ? '' : 'off'}">${esc(role)}</span>
             <small style="display:block">${esc(u.email || '')}${u.phone ? ' · ' + esc(u.phone) : ''}</small>
+            ${u.disabled === true ? '<span class="adm-badge off">suspended</span>' : '<span class="adm-badge">active</span>'}
             ${u.restaurantId ? `<small style="display:block;color:var(--text-muted)">Shop: ${esc((cache.restaurants.find(r => r.id === u.restaurantId) || {}).name || u.restaurantId)}</small>` : ''}
           </div>
           <div class="adm-form" style="flex:1;min-width:220px;margin:0;padding:0;border:0;box-shadow:none">
@@ -342,7 +344,7 @@ function renderUsers(view) {
                 ).join('')}
               </select>
             </label>
-            <div class="full"><button class="adm-btn primary u-save" type="button">Save role</button></div>
+            <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="adm-btn primary u-save" type="button">Save role</button><button class="adm-btn ${u.disabled === true ? 'primary' : 'danger'} u-toggle" type="button">${u.disabled === true ? 'Reactivate account' : 'Suspend account'}</button></div>
           </div>
         </div>`;
       }).join('') || '<p class="adm-note">No users yet. Ask them to Sign Up on login.html.</p>'}
@@ -367,6 +369,22 @@ function renderUsers(view) {
   });
   document.getElementById('u-role-filter')?.addEventListener('change', applyFilter);
 
+  view.querySelectorAll('.u-toggle').forEach(btn => {
+    btn.onclick = async () => {
+      const row = btn.closest('[data-uid]');
+      const target = cache.users.find(u => u.id === row.dataset.uid);
+      if (!target) return;
+      const next = target.disabled !== true;
+      if (!confirm(next ? 'Suspend this account? The user will be signed out on their next auth check.' : 'Reactivate this account?')) return;
+      try {
+        await updateUserProfile(target.id, { disabled: next });
+        target.disabled = next;
+        showToast(next ? 'Account suspended' : 'Account reactivated', 'success');
+        renderUsers(view);
+      } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+    };
+  });
+
   view.querySelectorAll('.u-save').forEach(btn => {
     btn.onclick = async () => {
       const row = btn.closest('[data-uid]');
@@ -377,6 +395,8 @@ function renderUsers(view) {
         const extra = {};
         if (role === 'restaurant' && restId) {
           extra.restaurantId = restId;
+          const previous = cache.restaurants.find(r => r.ownerId === uid && r.id !== restId);
+          if (previous) await saveRestaurant({ name: previous.name, ownerId: null }, previous.id);
           const rest = cache.restaurants.find(r => r.id === restId);
           if (rest) {
             await saveRestaurant({
@@ -397,6 +417,8 @@ function renderUsers(view) {
         }
         if (role === 'customer' || role === 'rider') {
           extra.restaurantId = null;
+          const previous = cache.restaurants.find(r => r.ownerId === uid);
+          if (previous) await saveRestaurant({ name: previous.name, ownerId: null }, previous.id);
         }
         if (role === 'rider') {
           extra.riderOnline = false;

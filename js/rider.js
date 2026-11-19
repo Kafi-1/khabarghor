@@ -4,7 +4,7 @@
  */
 import { login, logout, onAuthReady, getCurrentUser } from './auth.js';
 import { isFirebaseConfigured } from './firebase-config.js';
-import { getUserProfile, getReadyOrders, getOrdersByRider, updateOrderStatus, updateUserProfile, mapsLink } from './firestore.js';
+import { getUserProfile, getReadyOrders, getOrdersByRider, updateOrderStatus, updateUserProfile, mapsLink, acceptReadyOrder } from './firestore.js';
 import { escapeHtml as esc, formatCurrency, formatDateTime } from './utils.js';
 import { showToast } from './ui.js';
 
@@ -78,6 +78,15 @@ async function load() {
       const mine = await getOrdersByRider(uid);
       renderRiderDashboard(view, mine);
     } else if (tab === 'available') {
+      if (profile?.riderOnline !== true) {
+        view.innerHTML = '<div class="adm-box"><h3>You are offline</h3><p>Go online from Dashboard to see and accept available deliveries.</p><button class="adm-btn primary" id="go-online">Go online</button></div>';
+        document.getElementById('go-online').onclick = async () => {
+          await updateUserProfile(uid, { riderOnline: true });
+          profile = { ...profile, riderOnline: true };
+          await load();
+        };
+        return;
+      }
       const list = await getReadyOrders();
       renderAvailable(view, list);
     } else if (tab === 'my') {
@@ -145,10 +154,9 @@ function renderAvailable(view, list) {
   view.querySelectorAll('[data-accept]').forEach(b => {
     b.onclick = () => {
       const user = getCurrentUser();
-      run(() => updateOrderStatus(b.dataset.accept, 'delivering', {
-        riderId: user.uid,
-        driverName: profile?.name || user.displayName || user.email?.split('@')[0] || 'Rider',
-        driverPhone: profile?.phone || ''
+      run(() => acceptReadyOrder(b.dataset.accept, user.uid, {
+        name: profile?.name || user.displayName || user.email?.split('@')[0] || 'Rider',
+        phone: profile?.phone || ''
       }), 'Delivery accepted');
     };
   });
@@ -185,7 +193,8 @@ function renderHistory(view, list) {
 function renderRiderDashboard(view, mine) {
   const completed = mine.filter(o => o.status === 'completed');
   const active = mine.filter(o => o.status === 'delivering');
-  const earnings = completed.reduce((s, o) => s + 40, 0); // flat delivery fee as rough earning
+  const earningsKnown = completed.every(o => Number.isFinite(Number(o.riderEarning)));
+  const earnings = earningsKnown ? completed.reduce((s, o) => s + Number(o.riderEarning || 0), 0) : null;
   const online = profile?.riderOnline === true;
   view.innerHTML = `
     <div class="adm-box" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -198,7 +207,7 @@ function renderRiderDashboard(view, mine) {
     <div class="dash-grid">
       <div class="dash-card"><div class="dash-val">${completed.length}</div><div class="dash-lbl">Deliveries done</div></div>
       <div class="dash-card"><div class="dash-val">${active.length}</div><div class="dash-lbl">Active now</div></div>
-      <div class="dash-card"><div class="dash-val">${formatCurrency(earnings)}</div><div class="dash-lbl">Est. earnings</div></div>
+      <div class="dash-card"><div class="dash-val">${earnings === null ? '—' : formatCurrency(earnings)}</div><div class="dash-lbl">${earnings === null ? 'Earnings not configured' : 'Recorded earnings'}</div></div>
       <div class="dash-card"><div class="dash-val">${mine.length}</div><div class="dash-lbl">Total assigned</div></div>
     </div>
     <div class="adm-box">

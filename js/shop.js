@@ -273,11 +273,15 @@ function renderInfo(view) {
       <p><strong>Address:</strong> ${esc(myRestaurant.address || '—')}
         ${map ? ` <a href="${map}" target="_blank" rel="noopener">📍 Map</a>` : ''}</p>
       <p><strong>Phone:</strong> ${myRestaurant.phone ? `<a href="tel:${esc(myRestaurant.phone)}">${esc(myRestaurant.phone)}</a>` : '—'}</p>
-      <p><strong>Delivery time:</strong> ${esc(myRestaurant.deliveryTime || '—')}</p>
       <p><strong>Catalogue:</strong> ${myRestaurant.active !== false ? 'Visible' : 'Hidden (admin)'}</p>
       <hr style="margin:16px 0;border:0;border-top:1px solid var(--border-light)">
-      <h3 style="margin-bottom:8px">Shop status (orders)</h3>
+      <h3 style="margin-bottom:8px">Shop information</h3>
       <div class="adm-form">
+        <label>Shop name<input id="shop-name" value="${esc(myRestaurant.name || '')}"></label>
+        <label>Phone<input id="shop-phone" value="${esc(myRestaurant.phone || '')}"></label>
+        <label class="full">Description<input id="shop-description" value="${esc(myRestaurant.description || '')}"></label>
+        <label class="full">Address<input id="shop-address" value="${esc(myRestaurant.address || '')}"></label>
+        <label>Delivery time<input id="shop-delivery" value="${esc(myRestaurant.deliveryTime || '')}" placeholder="20–35 min"></label>
         <label>Status
           <select id="shop-status">
             <option value="open" ${st === 'open' ? 'selected' : ''}>🟢 Open — accept orders</option>
@@ -285,29 +289,33 @@ function renderInfo(view) {
             <option value="closed" ${st === 'closed' ? 'selected' : ''}>🔴 Closed — pause orders</option>
           </select>
         </label>
-        <div class="full"><button class="adm-btn primary" id="shop-status-save">Save status</button></div>
+        <div class="full"><button class="adm-btn primary" id="shop-status-save">Save shop information</button></div>
       </div>
     </div>`;
   document.getElementById('shop-status-save').onclick = async () => {
     const status = document.getElementById('shop-status').value;
+    const name = val('shop-name');
+    if (!name) return showToast('Shop name is required', 'error');
     try {
       const { saveRestaurant } = await import('./firestore.js');
       await saveRestaurant({
-        name: myRestaurant.name,
-        description: myRestaurant.description || '',
+        name,
+        description: val('shop-description'),
         image: myRestaurant.image || '',
         coverImage: myRestaurant.coverImage || '',
         deliveryTime: myRestaurant.deliveryTime || '',
         active: myRestaurant.active !== false,
         ownerId: myRestaurant.ownerId || null,
-        address: myRestaurant.address || '',
-        phone: myRestaurant.phone || '',
+        address: val('shop-address'),
+        phone: val('shop-phone'),
+        deliveryTime: val('shop-delivery'),
         status,
         ...(myRestaurant.distance != null ? { distance: myRestaurant.distance } : {}),
         ...(myRestaurant.lat != null ? { lat: myRestaurant.lat, lng: myRestaurant.lng } : {})
       }, myRestaurant.id);
-      myRestaurant.status = status;
-      showToast('Status saved: ' + status, 'success');
+      myRestaurant = { ...myRestaurant, name, description: val('shop-description'), address: val('shop-address'), phone: val('shop-phone'), deliveryTime: val('shop-delivery'), status };
+      showToast('Shop information updated', 'success');
+      renderInfo(view);
     } catch (e) {
       showToast('Failed: ' + e.message, 'error');
     }

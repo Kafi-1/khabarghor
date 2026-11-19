@@ -6,14 +6,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/fireba
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional.
 const firebaseConfig = {
-  apiKey: "AIzaSyB2n12GsRN3l5AS6FGFGq6S5DGyzlAmUZA",
-  authDomain: "khabarghor2.firebaseapp.com",
-  projectId: "khabarghor2",
-  storageBucket: "khabarghor2.firebasestorage.app",
-  messagingSenderId: "874555138235",
-  appId: "1:874555138235:web:4ca363b71ddd77e53f899e",
-  measurementId: "G-L7LR4G84SC"
+  apiKey: "AIzaSyDWNETnTYWlkIJShZ3CzBQUhRU4PsTUJDA",
+  authDomain: "khabarghor-bd.firebaseapp.com",
+  databaseURL: "https://khabarghor-bd-default-rtdb.firebaseio.com",
+  projectId: "khabarghor-bd",
+  storageBucket: "khabarghor-bd.firebasestorage.app",
+  messagingSenderId: "243370074435",
+  appId: "1:243370074435:web:60dfdd09545679120f0ff6",
+  measurementId: "G-953FD62Z3X"
 };
 
 const app = initializeApp(firebaseConfig);
