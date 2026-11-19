@@ -41,6 +41,13 @@ service cloud.firestore {
           (resource.data.status == 'preparing' && request.resource.data.status in ['ready','cancelled'])
         );
     }
+    function customerMayCancelOrder() {
+      return isActiveAccount()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelReason','updatedAt']);
+    }
     function riderMayUpdateOrder() {
       return isRider()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -124,7 +131,7 @@ service cloud.firestore {
         (isRider() && (resource.data.riderId == request.auth.uid ||
           (resource.data.status == 'ready' && userData().riderOnline == true)))
       );
-      allow update: if isAdmin() || shopMayUpdateOrder() || riderMayUpdateOrder();
+      allow update: if isAdmin() || shopMayUpdateOrder() || riderMayUpdateOrder() || customerMayCancelOrder();
       allow delete: if isAdmin();
     }
 
@@ -140,7 +147,13 @@ service cloud.firestore {
     }
     match /coupons/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      // A customer may only bump usedCount by exactly 1 (coupon use after an order)
+      allow update: if isAdmin() || (
+        isActiveAccount()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount'])
+        && request.resource.data.usedCount == resource.data.get('usedCount', 0) + 1
+      );
     }
     match /reviews/{id} {
       allow read: if true;

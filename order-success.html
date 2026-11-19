@@ -32,6 +32,7 @@
       </div>
       <h1>Order Placed!</h1>
       <p>Thank you for using Khabar Ghor. Enjoy your meal! 🎉</p>
+      <p id="cod-note" style="margin-top:8px;font-size:.9rem;color:var(--text-muted)">💵 Cash on Delivery — pay the rider when your food arrives.</p>
       <div class="success-actions">
         <a href="#" class="btn btn-primary btn-block" id="view-order-btn">View Order</a>
         <a href="index.html" class="btn btn-outline btn-block">Order Again</a>
@@ -42,6 +43,18 @@
     import { getQueryParam } from './js/utils.js';
     const id = getQueryParam('id');
     document.getElementById('view-order-btn').href = id ? `order-tracking.html?id=${id}` : 'orders.html';
+    if (id) {
+      try {
+        const { getOrder } = await import('./js/firestore.js');
+        const { onAuthReady } = await import('./js/auth.js');
+        const { formatCurrency } = await import('./js/utils.js');
+        await new Promise(r => onAuthReady(r));
+        const o = await getOrder(id);
+        if (o?.total != null) {
+          document.getElementById('cod-note').textContent = `💵 Please keep ${formatCurrency(o.total)} in cash ready for the rider.`;
+        }
+      } catch (e) { /* keep the default text */ }
+    }
   </script>
 </body>
 </html>
