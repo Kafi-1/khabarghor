@@ -5,6 +5,7 @@
 import { renderBottomNav, showToast, showModal } from './ui.js';
 import { onAuthReady, logout, getCurrentUser } from './auth.js';
 import { getUserProfile, updateUserProfile } from './firestore.js';
+import { ADMIN_EMAILS } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bottom-nav').innerHTML = renderBottomNav('profile');
@@ -33,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.getElementById('profile-name').textContent = name;
       document.getElementById('profile-phone').textContent = phone;
-      const role = profileData?.role || 'customer';
+      const isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email || '').toLowerCase());
+      const role = isAdmin ? 'admin' : (profileData?.role || 'customer');
       const panel = document.getElementById('role-panel-link');
       if (panel && role !== 'customer') {
         panel.hidden = false;
@@ -42,7 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (photo) {
-        document.querySelector('.profile-avatar').innerHTML = `<img src="${photo}" alt="${name}">`;
+        const avatar = document.querySelector('.profile-avatar');
+        const image = document.createElement('img');
+        image.src = photo;
+        image.alt = name;
+        image.referrerPolicy = 'no-referrer';
+        avatar.replaceChildren(image);
       }
     } else {
       document.getElementById('profile-name').textContent = 'Guest';
