@@ -4,7 +4,7 @@
 
 import { renderBottomNav, showToast, showModal } from './ui.js';
 import { onAuthReady, logout, getCurrentUser } from './auth.js';
-import { getUserProfile } from './firestore.js';
+import { getUserProfile, updateUserProfile } from './firestore.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bottom-nav').innerHTML = renderBottomNav('profile');
@@ -17,10 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
       let name = user.displayName || user.email?.split('@')[0] || 'User';
       let phone = user.phoneNumber || user.email || '';
       let photo = user.photoURL;
+      let profileData = null;
 
       {
         try {
           const profile = await getUserProfile(user.uid);
+          profileData = profile;
           if (profile) {
             name = profile.name || name;
             phone = profile.phone || phone;
@@ -31,6 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.getElementById('profile-name').textContent = name;
       document.getElementById('profile-phone').textContent = phone;
+      const role = profileData?.role || 'customer';
+      const panel = document.getElementById('role-panel-link');
+      if (panel && role !== 'customer') {
+        panel.hidden = false;
+        panel.href = role === 'rider' ? 'rider.html' : role === 'restaurant' ? 'shop.html' : 'admin.html';
+        panel.textContent = role === 'rider' ? 'Open Rider Panel' : role === 'restaurant' ? 'Open Shop Panel' : 'Open Admin Panel';
+      }
 
       if (photo) {
         document.querySelector('.profile-avatar').innerHTML = `<img src="${photo}" alt="${name}">`;
@@ -53,6 +62,24 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const action = item.dataset.action;
       if (action === 'help') { window.location.href = 'help.html'; return; }
+      if (action === 'edit-profile') {
+        const user = getCurrentUser();
+        if (!user) { window.location.href = 'login.html'; return; }
+        (async () => {
+          const old = await getUserProfile(user.uid) || {};
+          const nextName = prompt('Your name:', old.name || user.displayName || '');
+          if (nextName === null) return;
+          const nextPhone = prompt('Mobile number:', old.phone || '');
+          if (nextPhone === null) return;
+          try {
+            await updateUserProfile(user.uid, { name: nextName.trim(), phone: nextPhone.trim() });
+            document.getElementById('profile-name').textContent = nextName.trim() || 'User';
+            document.getElementById('profile-phone').textContent = nextPhone.trim() || user.email || '';
+            showToast('Profile updated', 'success');
+          } catch (err) { showToast('Could not update profile: ' + err.message, 'error'); }
+        })();
+        return;
+      }
       const titles = {
         address: 'My Address',
         payment: 'Payment Method',
