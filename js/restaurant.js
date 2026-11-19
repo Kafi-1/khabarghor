@@ -133,7 +133,7 @@ async function loadRestaurant(id) {
     if (mp) mp.dataset.menuHtml = mp.innerHTML;
 
     // Category sidebar click
-    document.getElementById('cat-sidebar')?.addEventListener('click, (e) => {
+    document.getElementById('cat-sidebar')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.menu-cat-btn');
       if (!btn) return;
       document.querySelectorAll('.menu-cat-btn').forEach(b => b.classList.remove('active'));
