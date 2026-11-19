@@ -6,6 +6,7 @@ import { renderBottomNav, showToast, showModal } from './ui.js';
 import { onAuthReady, logout, getCurrentUser } from './auth.js';
 import { getUserProfile, updateUserProfile } from './firestore.js';
 import { ADMIN_EMAILS } from './firebase-config.js';
+import { escapeHtml } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bottom-nav').innerHTML = renderBottomNav('profile');
@@ -75,14 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
         (async () => {
           const saved = JSON.parse(localStorage.getItem('khabarghor_customer') || '{}');
           const current = await getUserProfile(user.uid).catch(() => null);
-          const next = prompt('Delivery address:', current?.address || saved.address || '');
-          if (next === null) return;
-          const address = next.trim();
-          try {
-            await updateUserProfile(user.uid, { address });
-            localStorage.setItem('khabarghor_customer', JSON.stringify({ ...saved, name: current?.name || user.displayName || '', phone: current?.phone || '', address }));
-            showToast('Delivery address saved', 'success');
-          } catch (err) { showToast('Could not save address: ' + err.message, 'error'); }
+          showModal({
+            title: 'Delivery address',
+            content: `<textarea id="m-address" rows="3" placeholder="House, road, area, upazila, district" style="width:100%;padding:10px;border:1px solid #eee;border-radius:12px">${escapeHtml(current?.address || saved.address || '')}</textarea>`,
+            confirmText: 'Save',
+            onConfirm: async () => {
+              const address = document.getElementById('m-address').value.trim();
+              try {
+                await updateUserProfile(user.uid, { address });
+                localStorage.setItem('khabarghor_customer', JSON.stringify({ ...saved, name: current?.name || user.displayName || '', phone: current?.phone || '', address }));
+                showToast('Delivery address saved', 'success');
+              } catch (err) { showToast('Could not save address. Try again.', 'error'); }
+            }
+          });
         })();
         return;
       }
@@ -91,16 +97,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!user) { window.location.href = 'login.html'; return; }
         (async () => {
           const old = await getUserProfile(user.uid) || {};
-          const nextName = prompt('Your name:', old.name || user.displayName || '');
-          if (nextName === null) return;
-          const nextPhone = prompt('Mobile number:', old.phone || '');
-          if (nextPhone === null) return;
-          try {
-            await updateUserProfile(user.uid, { name: nextName.trim(), phone: nextPhone.trim() });
-            document.getElementById('profile-name').textContent = nextName.trim() || 'User';
-            document.getElementById('profile-phone').textContent = nextPhone.trim() || user.email || '';
-            showToast('Profile updated', 'success');
-          } catch (err) { showToast('Could not update profile: ' + err.message, 'error'); }
+          const inputStyle = 'width:100%;padding:10px;margin:4px 0 10px;border:1px solid #eee;border-radius:12px';
+          showModal({
+            title: 'Edit profile',
+            content: `
+              <label style="font-size:.85rem">Name</label>
+              <input id="m-name" value="${escapeHtml(old.name || user.displayName || '')}" style="${inputStyle}">
+              <label style="font-size:.85rem">Mobile number</label>
+              <input id="m-phone" type="tel" placeholder="01XXXXXXXXX" value="${escapeHtml(old.phone || '')}" style="${inputStyle}">`,
+            confirmText: 'Save',
+            onConfirm: async () => {
+              const name = document.getElementById('m-name').value.trim();
+              const phone = document.getElementById('m-phone').value.trim();
+              if (!name) { showToast('Name cannot be empty', 'error'); return; }
+              if (phone && !/^(\+?88)?01[3-9]\d{8}$/.test(phone)) { showToast('Enter a valid BD mobile number', 'error'); return; }
+              try {
+                await updateUserProfile(user.uid, { name, phone });
+                document.getElementById('profile-name').textContent = name;
+                document.getElementById('profile-phone').textContent = phone || user.email || '';
+                showToast('Profile updated', 'success');
+              } catch (err) { showToast('Could not update profile. Try again.', 'error'); }
+            }
+          });
         })();
         return;
       }
@@ -111,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
         about: 'About Khabar Ghor'
       };
       const contents = {
-        address: '<p>' + (JSON.parse(localStorage.getItem('khabarghor_customer')||'{}').address || 'No saved address yet.') + '</p><p style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">You can edit your address at checkout.</p>',
-        payment: '<p>Cash on Delivery, bKash, Nagad, Rocket (pay as instructed after order).</p>',
+        address: '<p>' + escapeHtml(JSON.parse(localStorage.getItem('khabarghor_customer')||'{}').address || 'No saved address yet.') + '</p><p style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">You can edit your address at checkout.</p>',
+        payment: '<p>Cash on Delivery (COD) only. Pay the rider in cash when your order arrives.</p>',
         voucher: '<p>Enter coupon codes at checkout. Ask admin for promo codes.</p>',
         about: '<p><strong>Khabar Ghor</strong></p><p style="margin-top:8px;">Local Khabar, Apnar Kache, Ghorer Moto Shad.</p><p style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">Version 1.2.0</p>'
       };

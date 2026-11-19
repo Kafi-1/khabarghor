@@ -3,7 +3,8 @@
  */
 
 import { getQueryParam, formatCurrency, escapeHtml } from './utils.js';
-import { listenToOrder } from './firestore.js';
+import { listenToOrder, updateOrderStatus } from './firestore.js';
+import { showConfirm, showToast } from './ui.js';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'Placed' },
@@ -98,7 +99,7 @@ function renderTracking(order) {
           <p>Your rider</p>
         </div>
         <div class="driver-actions">
-          <a href="tel:${driver.phone || ''}" class="driver-action-btn" aria-label="Call">
+          <a href="tel:${escapeHtml(driver.phone || '')}" class="driver-action-btn" aria-label="Call">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
             </svg>
@@ -106,6 +107,12 @@ function renderTracking(order) {
         </div>
       </div>
     ` : ''}
+
+    ${status === 'pending' ? `
+      <div style="padding:0 16px 8px;">
+        <button class="btn btn-outline btn-block" id="cancel-order-btn" style="color:#c62828;border-color:#c62828;">Cancel order</button>
+        <p style="font-size:.75rem;color:var(--text-muted);text-align:center;margin-top:6px;">You can cancel until the restaurant accepts.</p>
+      </div>` : ''}
 
     <div style="padding:16px;">
       <div class="cart-summary" style="border:1px solid var(--border-light);border-radius:var(--radius);">
@@ -123,7 +130,20 @@ function renderTracking(order) {
           <span>Total</span>
           <span style="color:var(--primary);">${formatCurrency(order.total || 0)}</span>
         </div>
+        ${order.paymentMethod === 'cod' && status !== 'cancelled' && status !== 'completed' ? `<p style="font-size:.8rem;color:var(--text-muted);margin-top:6px;">💵 Pay ${formatCurrency(order.total || 0)} in cash to the rider.</p>` : ''}
+        ${status === 'cancelled' && order.cancelReason ? `<p style="font-size:.8rem;color:#c62828;margin-top:6px;">Reason: ${escapeHtml(order.cancelReason)}</p>` : ''}
       </div>
     </div>
   `;
+
+  document.getElementById('cancel-order-btn')?.addEventListener('click', () => {
+    showConfirm('Cancel this order?', async () => {
+      try {
+        await updateOrderStatus(order.id, 'cancelled', { cancelReason: 'Cancelled by customer' });
+        showToast('Order cancelled', 'info');
+      } catch (e) {
+        showToast('Could not cancel. The restaurant may have just accepted it.', 'error');
+      }
+    });
+  });
 }

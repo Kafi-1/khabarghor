@@ -42,6 +42,8 @@ export function updateNotifDot() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // This module is also imported by other pages (checkout, home) – only run the page logic on notifications.html
+  if (!document.getElementById('notif-list')) return;
   const nav = document.getElementById('bottom-nav');
   if (nav) nav.innerHTML = renderBottomNav('home');
 

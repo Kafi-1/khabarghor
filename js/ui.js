@@ -233,9 +233,9 @@ export function renderProductTile(p) {
 // ==================== CATEGORY ITEM ====================
 export function renderCategoryItem(category, isActive = false) {
   return `
-    <button class="category-item ${isActive ? 'active' : ''}" data-id="${category.id}" data-name="${escapeHtml(category.name)}">
+    <button class="category-item ${isActive ? 'active' : ''}" data-id="${escapeHtml(String(category.id))}" data-name="${escapeHtml(category.name)}">
       <span class="category-icon">
-        ${category.icon ? `<img src="${category.icon}" alt="">` : getCategoryEmoji(category.name)}
+        ${category.icon ? `<img src="${escapeHtml(category.icon)}" alt="">` : getCategoryEmoji(category.name)}
       </span>
       <span class="category-name">${escapeHtml(category.name)}</span>
     </button>

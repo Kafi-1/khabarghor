@@ -5,7 +5,6 @@
 import { getProduct, getRestaurant } from './firestore.js';
 import { getQueryParam, formatCurrency, escapeHtml, showError } from './utils.js';
 import { addToCart, updateCartBadge } from './cart.js';
-import { showToast } from './ui.js';
 
 let product = null;
 let restaurant = null;
@@ -106,17 +105,13 @@ function bindActions() {
     qty++; qtyEl.textContent = qty;
   };
 
+  const restInfo = () => ({ id: product.restaurantId, name: product.restaurantName || restaurant?.name });
+
   document.getElementById('pd-add').onclick = () => {
-    for (let i = 0; i < qty; i++) {
-      addToCart(product, { id: product.restaurantId, name: product.restaurantName || restaurant?.name });
-    }
-    showToast(`Added ${qty} × ${product.name} to cart`, 'success');
+    addToCart(product, restInfo(), qty);
   };
 
   document.getElementById('pd-buy').onclick = () => {
-    for (let i = 0; i < qty; i++) {
-      addToCart(product, { id: product.restaurantId, name: product.restaurantName || restaurant?.name });
-    }
-    window.location.href = 'cart.html';
+    if (addToCart(product, restInfo(), qty)) window.location.href = 'cart.html';
   };
 }

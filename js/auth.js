@@ -9,7 +9,8 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import { auth } from './firebase-config.js';
 import { createUserProfile, getUserProfile } from './firestore.js';
@@ -41,18 +42,15 @@ onAuthStateChanged(auth, async (user) => {
   authReady = true;
 
   if (user) {
-    // Suspended accounts must not continue using customer/shop/rider pages.
     try {
-      const existingProfile = await getUserProfile(user.uid);
-      if (existingProfile?.disabled === true) {
+      const profile = await getUserProfile(user.uid);
+      // Suspended accounts must not continue using customer/shop/rider pages.
+      if (profile?.disabled === true) {
         await signOut(auth);
         showToast('This account is suspended. Contact support.', 'error');
         return;
       }
-    } catch (e) { console.warn('Account status check failed:', e); }
-    // Ensure profile exists
-    try {
-      const profile = await getUserProfile(user.uid);
+      // Ensure profile exists
       if (!profile) {
         await createUserProfile(user.uid, {
           name: user.displayName || user.email?.split('@')[0] || 'User',
@@ -62,7 +60,7 @@ onAuthStateChanged(auth, async (user) => {
         });
       }
     } catch (e) {
-      console.warn('Profile check failed:', e);
+      console.warn('Profile/account check failed:', e);
     }
   }
 
@@ -134,6 +132,18 @@ export async function loginWithGoogle() {
   }
 }
 
+export async function resetPassword(email) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast('Reset link sent. Check your email (and spam folder).', 'success', 5000);
+  } catch (error) {
+    // Do not reveal whether an email is registered
+    if (error.code === 'auth/invalid-email') showToast('Enter a valid email address', 'error');
+    else if (error.code === 'auth/network-request-failed') showToast('Internet connection problem', 'error');
+    else showToast('Reset link sent if this email is registered.', 'info', 5000);
+  }
+}
+
 export async function logout() {
   try {
     await signOut(auth);
@@ -155,7 +165,8 @@ function getAuthErrorMessage(code) {
     'auth/invalid-credential': 'Wrong email or password',
     'auth/too-many-requests': 'Too many attempts. Try later',
     'auth/network-request-failed': 'Internet connection problem',
-    'auth/popup-closed-by-user': 'Login cancelled'
+    'auth/popup-closed-by-user': 'Login cancelled',
+    'auth/unauthorized-domain': 'This website is not allowed for Google login yet. Tell the admin.'
   };
   return messages[code] || 'Something went wrong. Try again.';
 }

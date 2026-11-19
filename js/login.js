@@ -2,7 +2,7 @@
  * Khabar Ghor - Login / Register Page
  */
 
-import { login, register, loginWithGoogle, onAuthReady } from './auth.js';
+import { login, register, loginWithGoogle, resetPassword, onAuthReady } from './auth.js';
 import { showToast } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,6 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('switch-text').textContent = isRegister ? 'Already have an account?' : "Don't have an account?";
     document.getElementById('switch-link').textContent = isRegister ? 'Login' : 'Sign Up';
   });
+
+  document.getElementById('forgot-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    if (!email) { showToast('Type your email above first, then tap Forgot password', 'info'); return; }
+    resetPassword(email);
+  });
+
+  // Enter key submits the form
+  document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('login-submit').click(); });
+  document.getElementById('reg-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('register-submit').click(); });
 
   document.getElementById('login-submit').addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();

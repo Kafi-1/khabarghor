@@ -93,7 +93,7 @@ async function doSearch(term) {
     ]);
 
     if (!products.length && !restos.length) {
-      showEmpty(results, `Nothing found for "${term}"`, '🔍');
+      showEmpty(results, `Nothing found for "${escapeHtml(term)}"`, '🔍');
       return;
     }
 

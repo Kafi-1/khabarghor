@@ -67,11 +67,21 @@ export async function getUserProfile(uid) {
 }
 
 export async function createUserProfile(uid, data) {
-  await setDoc(doc(db, 'users', uid), {
-    ...data,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
+  const ref = doc(db, 'users', uid);
+  // register() and the auth listener can both call this at the same moment.
+  // A second setDoc counts as an update and the security rules reject it,
+  // so skip if the profile already exists.
+  try { if ((await getDoc(ref)).exists()) return; } catch { /* continue */ }
+  try {
+    await setDoc(ref, {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    try { if ((await getDoc(ref)).exists()) return; } catch { /* ignore */ }
+    throw err;
+  }
 }
 
 export async function updateUserProfile(uid, data) {
@@ -237,13 +247,8 @@ export async function getProduct(id) {
 export async function searchProducts(term) {
   const lower = (term || '').toLowerCase().trim();
   if (!lower) return [];
-  // Use cached products list when possible for instant search
-  let list = cacheGet('products');
-  if (!list) {
-    const snap = await getDocs(query(collection(db, 'products'), where('available', '==', true), limit(100)));
-    list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    cacheSet('products', list.filter(p => p.available !== false).sort(byNewest));
-  }
+  // Same list/cache as the home page (products without an `available` field are included)
+  const list = await getProducts();
   return list.filter(p =>
     (p.name || '').toLowerCase().includes(lower) ||
     (p.description || '').toLowerCase().includes(lower) ||

@@ -6,7 +6,7 @@ import {
   getCart, increaseQuantity, decreaseQuantity, removeFromCart,
   clearCart, calculateSubtotal, calculateTotal, getFees, getCartCount, updateCartBadge
 } from './cart.js';
-import { formatCurrency } from './utils.js';
+import { formatCurrency, escapeHtml } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const nav = document.getElementById('bottom-nav');
@@ -44,7 +44,7 @@ function renderCart() {
 
   container.innerHTML = `
     <div style="padding:12px 16px 0;font-size:.85rem;color:var(--text-muted)">
-      Ordering from <strong style="color:var(--text)">${restName}</strong>
+      Ordering from <strong style="color:var(--text)">${escapeHtml(restName)}</strong>
     </div>
     <div class="cart-items" id="cart-items">
       ${cart.map(item => renderCartItem(item)).join('')}

@@ -25,7 +25,8 @@ export function saveCart(cart) {
   window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
 }
 
-export function addToCart(product, restaurant = {}) {
+/** Returns the updated cart, or false if the item could not be added. */
+export function addToCart(product, restaurant = {}, qty = 1) {
   const cart = getCart();
   const restId = product.restaurantId || restaurant.id || '';
   const restName = restaurant.name || product.restaurantName || '';
@@ -35,28 +36,28 @@ export function addToCart(product, restaurant = {}) {
     const existingRestId = cart[0].restaurantId;
     if (existingRestId && existingRestId !== restId) {
       showToast(`Cart has items from ${cart[0].restaurantName || 'another shop'}. Clear cart first or finish that order.`, 'error');
-      return cart;
+      return false;
     }
   }
 
   const existing = cart.find(item => item.id === product.id);
 
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity += qty;
   } else {
     cart.push({
       id: product.id,
       name: product.name,
       price: product.price,
       image: product.image || '',
-      quantity: 1,
+      quantity: qty,
       restaurantId: restId,
       restaurantName: restName
     });
   }
 
   saveCart(cart);
-  showToast(`${product.name} added to cart`, 'success');
+  showToast(qty > 1 ? `${qty} × ${product.name} added to cart` : `${product.name} added to cart`, 'success');
   return cart;
 }
 

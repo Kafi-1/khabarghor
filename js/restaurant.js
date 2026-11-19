@@ -28,7 +28,15 @@ async function loadRestaurant(id) {
       showError(container, 'Restaurant not found');
       return;
     }
-    const products = await getProductsByRestaurant(id);
+    const [products, reviewList] = await Promise.all([
+      getProductsByRestaurant(id),
+      getReviewsByRestaurant(id).catch(() => [])
+    ]);
+    // Customers can't write the restaurant's rating (security rules), so calculate it from the reviews
+    const reviewCount = reviewList.length || restaurant.reviewCount || 0;
+    const avgRating = reviewList.length
+      ? Math.round(reviewList.reduce((s, r) => s + (Number(r.rating) || 0), 0) / reviewList.length * 10) / 10
+      : restaurant.rating;
 
     currentRestaurant = restaurant;
     allProducts = products;
@@ -61,7 +69,7 @@ async function loadRestaurant(id) {
       <div class="restaurant-info">
         <h1>${escapeHtml(restaurant.name)}</h1>
         <div class="restaurant-info-meta">
-          ${restaurant.rating ? `<span class="rating">⭐ ${restaurant.rating} (${formatNumber(restaurant.reviewCount || 0)})</span>` : ''}
+          ${avgRating ? `<span class="rating">⭐ ${avgRating} (${formatNumber(reviewCount)})</span>` : ''}
           ${restaurant.deliveryTime ? `<span>⏱ ${escapeHtml(restaurant.deliveryTime)}</span>` : ''}
           ${restaurant.distance ? `<span>📍 ${restaurant.distance} km</span>` : ''}
           ${restaurant.status === 'closed' ? '<span style="color:#c62828;font-weight:600">Closed</span>' : restaurant.status === 'busy' ? '<span style="color:#ef6c00;font-weight:600">Busy</span>' : ''}
@@ -132,29 +140,34 @@ async function loadRestaurant(id) {
     const mp = document.getElementById('menu-panel');
     if (mp) mp.dataset.menuHtml = mp.innerHTML;
 
-    // Category sidebar click
-    document.getElementById('cat-sidebar')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.menu-cat-btn');
-      if (!btn) return;
-      document.querySelectorAll('.menu-cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const section = document.getElementById(`cat-${btn.dataset.cat}`);
-      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    // Delegated on the page container: the menu panel is re-rendered when switching
+    // Menu / Reviews / About tabs, so listeners on the buttons themselves would die.
+    container.addEventListener('click', (e) => {
+      const catBtn = e.target.closest('.menu-cat-btn');
+      if (catBtn) {
+        container.querySelectorAll('.menu-cat-btn').forEach(b => b.classList.remove('active'));
+        catBtn.classList.add('active');
+        const section = [...container.querySelectorAll('.menu-category-section')]
+          .find(s => s.dataset.cat === catBtn.dataset.cat);
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
 
-    // Add to cart + Buy Now (stop propagation so card link doesn't fire)
-    container.querySelectorAll('.btn-add, .btn-buy').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const product = allProducts.find(p => p.id === btn.dataset.id);
-        if (!product) return;
-        const result = addToCart(product, currentRestaurant);
-        updateFloatingCart();
-        if (btn.classList.contains('btn-buy') && Array.isArray(result) && result.length) {
-          window.location.href = 'cart.html';
-        }
-      });
+      const btn = e.target.closest('.btn-add, .btn-buy');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentRestaurant?.status === 'closed') {
+        showToast(`${currentRestaurant.name} is closed right now`, 'error');
+        return;
+      }
+      const product = allProducts.find(p => p.id === btn.dataset.id);
+      if (!product) return;
+      const result = addToCart(product, currentRestaurant);
+      updateFloatingCart();
+      if (btn.classList.contains('btn-buy') && Array.isArray(result) && result.length) {
+        window.location.href = 'cart.html';
+      }
     });
 
     // Favourite button – real Firestore toggle

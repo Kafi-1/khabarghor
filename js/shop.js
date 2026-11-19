@@ -134,7 +134,12 @@ async function run(fn, okMsg) {
 }
 
 /* -------- Orders -------- */
-const SHOP_STATUSES = ['pending', 'accepted', 'preparing', 'ready', 'cancelled'];
+// Must match the transitions allowed in firestore.rules (shopMayUpdateOrder)
+const SHOP_NEXT = {
+  pending: ['accepted', 'cancelled'],
+  accepted: ['preparing', 'cancelled'],
+  preparing: ['ready', 'cancelled']
+};
 
 function renderOrders(view, orders) {
   const active = orders.filter(o => !['completed', 'cancelled'].includes(o.status));
@@ -154,6 +159,10 @@ function renderOrders(view, orders) {
     b.onclick = () => {
       const f = b.closest('[data-o]');
       const status = f.querySelector('.o-status').value;
+      if (status === f.dataset.cur) {
+        showToast('Choose a new status first', 'info');
+        return;
+      }
       const reason = f.querySelector('.o-reason')?.value?.trim() || '';
       if (status === 'cancelled' && !reason) {
         showToast('Cancel reason required', 'error');
@@ -183,16 +192,16 @@ function orderCard(o) {
       <small style="display:block">${(o.items || []).map(i => `${i.quantity}× ${esc(i.name)}`).join(', ')}
         ${o.notes ? ' — Note: ' + esc(o.notes) : ''}</small>
       ${o.cancelReason ? `<small style="display:block;color:#c62828">Cancel: ${esc(o.cancelReason)}</small>` : ''}
-      ${!['completed', 'cancelled'].includes(o.status) ? `
-        <div class="adm-form" data-o="${o.id}" style="margin-top:8px">
+      ${SHOP_NEXT[o.status] ? `
+        <div class="adm-form" data-o="${o.id}" data-cur="${esc(o.status)}" style="margin-top:8px">
           <label>Status
             <select class="o-status">
-              ${SHOP_STATUSES.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+              ${[o.status, ...SHOP_NEXT[o.status]].map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
             </select>
           </label>
           <label class="full">Cancel reason (if cancelled)<input class="o-reason" placeholder="Out of stock / closed…" value="${esc(o.cancelReason || '')}"></label>
           <div class="full"><button class="adm-btn primary o-save">Update</button></div>
-        </div>` : ''}
+        </div>` : o.status === 'ready' ? '<small style="display:block;margin-top:6px;color:var(--text-muted)">Waiting for a rider to pick this up</small>' : ''}
     </div>`;
 }
 
@@ -301,17 +310,10 @@ function renderInfo(view) {
       await saveRestaurant({
         name,
         description: val('shop-description'),
-        image: myRestaurant.image || '',
-        coverImage: myRestaurant.coverImage || '',
-        deliveryTime: myRestaurant.deliveryTime || '',
-        active: myRestaurant.active !== false,
-        ownerId: myRestaurant.ownerId || null,
         address: val('shop-address'),
         phone: val('shop-phone'),
         deliveryTime: val('shop-delivery'),
-        status,
-        ...(myRestaurant.distance != null ? { distance: myRestaurant.distance } : {}),
-        ...(myRestaurant.lat != null ? { lat: myRestaurant.lat, lng: myRestaurant.lng } : {})
+        status
       }, myRestaurant.id);
       myRestaurant = { ...myRestaurant, name, description: val('shop-description'), address: val('shop-address'), phone: val('shop-phone'), deliveryTime: val('shop-delivery'), status };
       showToast('Shop information updated', 'success');

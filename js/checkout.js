@@ -7,24 +7,39 @@ import {
   getCart, calculateSubtotal, calculateTotal, getFees, clearCart, getCartCount
 } from './cart.js';
 import { formatCurrency, showEmpty } from './utils.js';
-import { createOrder, getCouponByCode, calcCouponDiscount, incrementCouponUse } from './firestore.js';
-import { getCurrentUser, onAuthReady, requireAuth } from './auth.js';
+import { createOrder, getCouponByCode, calcCouponDiscount, incrementCouponUse, getRestaurant, getUserProfile } from './firestore.js';
+import { getCurrentUser, onAuthReady } from './auth.js';
 import { pushNotif } from './notifications.js';
 
-let selectedPayment = 'nagad';
+const selectedPayment = 'cod'; // Cash on Delivery only
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await new Promise(r => onAuthReady(r));
+  const user = await new Promise(r => onAuthReady(r));
   if (getCartCount() === 0) {
     window.location.href = 'cart.html';
     return;
   }
-  renderCheckout();
+  // Ask guests to log in now, not after they filled the whole form
+  if (!user) {
+    showToast('Please login to place your order', 'info');
+    sessionStorage.setItem('auth_redirect', window.location.href);
+    setTimeout(() => { window.location.href = 'login.html'; }, 700);
+    return;
+  }
+  let profile = {};
+  try { profile = (await getUserProfile(user.uid)) || {}; } catch (e) { /* ignore */ }
+  renderCheckout(profile);
 });
 
-function renderCheckout() {
+function renderCheckout(profile = {}) {
   const container = document.getElementById('checkout-content');
-  const cust = JSON.parse(localStorage.getItem('khabarghor_customer') || '{}');
+  const saved = JSON.parse(localStorage.getItem('khabarghor_customer') || '{}');
+  // Saved checkout details first, then the account profile
+  const cust = {
+    name: saved.name || profile.name || '',
+    phone: saved.phone || profile.phone || '',
+    address: saved.address || profile.address || ''
+  };
   const esc = (v) => String(v || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const fees = getFees();
   const subtotal = calculateSubtotal();
@@ -55,49 +70,12 @@ function renderCheckout() {
       <p id="coupon-msg" style="font-size:.85rem;margin-top:8px;color:var(--text-muted)"></p>
     </div>
     <div class="payment-methods">
-      <h2>Payment Method</h2>
-
-      <div class="payment-option ${selectedPayment === 'bkash' ? 'selected' : ''}" data-method="bkash">
-        <div class="payment-icon">💗</div>
-        <div class="payment-info">
-          <h4>bKash</h4>
-          <p>Pay with bKash Personal / Payment</p>
-        </div>
-        <div class="payment-radio"></div>
-      </div>
-
-      <div class="payment-option ${selectedPayment === 'nagad' ? 'selected' : ''}" data-method="nagad">
-        <div class="payment-icon">📱</div>
-        <div class="payment-info">
-          <h4>Nagad</h4>
-          <p>Pay with Nagad</p>
-        </div>
-        <div class="payment-radio"></div>
-      </div>
-
-      <div class="payment-option ${selectedPayment === 'rocket' ? 'selected' : ''}" data-method="rocket">
-        <div class="payment-icon">💳</div>
-        <div class="payment-info">
-          <h4>Rocket</h4>
-          <p>Dutch-Bangla Rocket</p>
-        </div>
-        <div class="payment-radio"></div>
-      </div>
-
-      <div class="payment-option ${selectedPayment === 'card' ? 'selected' : ''}" data-method="card">
-        <div class="payment-icon">🏦</div>
-        <div class="payment-info">
-          <h4>Card / Bank</h4>
-          <p>Visa, Mastercard, bank transfer</p>
-        </div>
-        <div class="payment-radio"></div>
-      </div>
-
-      <div class="payment-option ${selectedPayment === 'cod' ? 'selected' : ''}" data-method="cod">
+      <h2>Payment</h2>
+      <div class="payment-option selected" data-method="cod">
         <div class="payment-icon">💵</div>
         <div class="payment-info">
           <h4>Cash on Delivery</h4>
-          <p>Pay when your order arrives</p>
+          <p>Pay <strong id="cod-amount">${formatCurrency(total)}</strong> in cash when your food arrives</p>
         </div>
         <div class="payment-radio"></div>
       </div>
@@ -128,19 +106,10 @@ function renderCheckout() {
         Place Order · ${formatCurrency(total)}
       </button>
       <p style="text-align:center;font-size:.75rem;color:var(--text-muted);margin-top:8px">
-        Payment is confirmed after restaurant accepts (COD / mobile banking)
+        No advance payment. Pay cash to the rider when your order arrives.
       </p>
     </div>
   `;
-
-  // Payment selection
-  container.querySelectorAll('.payment-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      container.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
-      opt.classList.add('selected');
-      selectedPayment = opt.dataset.method;
-    });
-  });
 
   document.getElementById('pay-btn').addEventListener('click', handlePayment);
 
@@ -162,6 +131,8 @@ function renderCheckout() {
       // update total display if present
       const totalEl = document.querySelector('#pay-btn');
       if (totalEl) totalEl.textContent = `Place Order · ${formatCurrency(Math.max(0, total - disc))}`;
+      const cod = document.getElementById('cod-amount');
+      if (cod) cod.textContent = formatCurrency(Math.max(0, total - disc));
     } catch (e) {
       msg.textContent = 'Could not verify coupon';
       msg.style.color = '#c62828';
@@ -171,6 +142,7 @@ function renderCheckout() {
 
 async function handlePayment() {
   const btn = document.getElementById('pay-btn');
+  const originalLabel = btn.textContent.trim();
   btn.disabled = true;
   btn.textContent = 'Processing...';
 
@@ -182,9 +154,20 @@ async function handlePayment() {
   if (!custName || !/^(\+?88)?01[3-9]\d{8}$/.test(custPhone || '') || (custAddress || '').length < 8) {
     showToast('Please enter name, a valid BD mobile number and full address', 'error');
     btn.disabled = false;
-    btn.textContent = 'Pay Now';
+    btn.textContent = originalLabel;
     return;
   }
+
+  // Don't let customers order from a shop that is closed / hidden
+  try {
+    const rest = cart[0]?.restaurantId ? await getRestaurant(cart[0].restaurantId) : null;
+    if (rest && (rest.active === false || rest.status === 'closed')) {
+      showToast(`${rest.name || 'This restaurant'} is closed right now. Please try later.`, 'error');
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      return;
+    }
+  } catch (e) { /* if the check fails, let the order go through */ }
   localStorage.setItem('khabarghor_customer', JSON.stringify({ name: custName, phone: custPhone, address: custAddress }));
   const notes = sessionStorage.getItem('order_notes') || '';
 
@@ -246,7 +229,7 @@ async function handlePayment() {
     console.error(err);
     showToast('Could not place order. Try again.', 'error');
     btn.disabled = false;
-    btn.textContent = 'Pay Now';
+    btn.textContent = originalLabel;
   }
 }
 
