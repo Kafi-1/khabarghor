@@ -396,7 +396,7 @@ function renderUsers(view) {
         if (role === 'restaurant' && restId) {
           extra.restaurantId = restId;
           const previous = cache.restaurants.find(r => r.ownerId === uid && r.id !== restId);
-          if (previous) await saveRestaurant({ ownerId: null }, previous.id);
+          if (previous) await saveRestaurant({ name: previous.name, ownerId: null }, previous.id);
           const rest = cache.restaurants.find(r => r.id === restId);
           if (rest) {
             await saveRestaurant({
@@ -417,6 +417,8 @@ function renderUsers(view) {
         }
         if (role === 'customer' || role === 'rider') {
           extra.restaurantId = null;
+          const previous = cache.restaurants.find(r => r.ownerId === uid);
+          if (previous) await saveRestaurant({ name: previous.name, ownerId: null }, previous.id);
         }
         if (role === 'rider') {
           extra.riderOnline = false;
