@@ -28,7 +28,7 @@ service cloud.firestore {
     function safeUserUpdate(userId) {
       return isActiveAccount() && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'name','phone','photoURL','address','updatedAt'
+          'name','phone','photoURL','address','riderOnline','updatedAt'
         ]);
     }
     function shopMayUpdateOrder() {
