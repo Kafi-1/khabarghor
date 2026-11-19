@@ -8,8 +8,13 @@ service cloud.firestore {
     function userData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    function isRestaurantOwner() { return signedIn() && userData().role == 'restaurant'; }
-    function isRider() { return signedIn() && userData().role == 'rider'; }
+    function isActiveAccount() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userData().disabled != true;
+    }
+    function isRestaurantOwner() { return isActiveAccount() && userData().role == 'restaurant'; }
+    function isRider() { return isActiveAccount() && userData().role == 'rider'; }
     function ownsRestaurant(id) {
       return isRestaurantOwner() && get(/databases/$(database)/documents/restaurants/$(id)).data.ownerId == request.auth.uid;
     }
@@ -21,7 +26,7 @@ service cloud.firestore {
         && (!('role' in request.resource.data) || request.resource.data.role == 'customer');
     }
     function safeUserUpdate(userId) {
-      return signedIn() && request.auth.uid == userId
+      return isActiveAccount() && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name','phone','photoURL','address','updatedAt'
         ]);
@@ -102,7 +107,7 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow create: if signedIn()
+      allow create: if isActiveAccount()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.keys().hasAll([
@@ -124,7 +129,7 @@ service cloud.firestore {
     }
 
     match /favorites/{id} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid;
       allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;
       allow update: if false;
     }
@@ -139,13 +144,13 @@ service cloud.firestore {
     }
     match /reviews/{id} {
       allow read: if true;
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid
         && request.resource.data.rating is int
         && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
       allow update, delete: if isAdmin();
     }
     match /support_tickets/{id} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid;
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow update: if isAdmin();
       allow delete: if isAdmin();
