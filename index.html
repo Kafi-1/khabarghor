@@ -58,6 +58,26 @@
         </div>
       </div>
 
+      <section class="kg-hero" aria-labelledby="kg-hero-title">
+        <div class="kg-hero-copy">
+          <span class="kg-eyebrow">Freshly made · Delivered with care</span>
+          <h1 id="kg-hero-title">Good food.<br><span>Good mood.</span></h1>
+          <p>Your neighbourhood favourites, freshly prepared and delivered to your door. Discover local kitchens and order something delicious today.</p>
+          <div class="kg-hero-actions">
+            <a class="btn btn-primary" href="restaurants.html">Explore restaurants <span aria-hidden="true">→</span></a>
+            <a class="btn kg-ghost-btn" href="#menu">Browse menu</a>
+          </div>
+        </div>
+        <div class="kg-hero-visual">
+          <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&amp;fit=crop&amp;w=1000&amp;q=85" alt="Freshly prepared food ready to enjoy" fetchpriority="high">
+          <div class="kg-hero-note">Made fresh, just for you<small>Local flavour. Doorstep comfort.</small></div>
+        </div>
+      </section>
+      <div class="kg-benefits" aria-label="Why order with Khabar Ghor">
+        <div class="kg-benefit"><div class="kg-benefit-icon" aria-hidden="true">🥗</div><div><strong>Fresh local food</strong><span>From kitchens around you</span></div></div>
+        <div class="kg-benefit"><div class="kg-benefit-icon" aria-hidden="true">🛵</div><div><strong>Easy ordering</strong><span>Simple checkout, less hassle</span></div></div>
+        <div class="kg-benefit"><div class="kg-benefit-icon" aria-hidden="true">♡</div><div><strong>Made with care</strong><span>Good food, good moments</span></div></div>
+      </div>
       <div class="page-content">
         <!-- Banner loaded from Firebase promos (hidden if empty) -->
         <div id="home-banner" style="display:none;"></div>
@@ -67,6 +87,15 @@
             <!-- Loaded dynamically -->
           </div>
         </div>
+
+        <!-- Restaurants loaded from Firebase -->
+        <section class="section" id="restaurants-section" style="display:none;">
+          <div class="section-header">
+            <h2>Local favourites</h2>
+            <a href="restaurants.html">See all restaurants →</a>
+          </div>
+          <div class="restaurant-list" id="home-restaurants"></div>
+        </section>
 
         <!-- Products from admin panel (Firebase) -->
         <section class="section" id="menu">
