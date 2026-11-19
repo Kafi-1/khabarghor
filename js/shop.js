@@ -294,6 +294,8 @@ function renderInfo(view) {
     </div>`;
   document.getElementById('shop-status-save').onclick = async () => {
     const status = document.getElementById('shop-status').value;
+    const name = val('shop-name');
+    if (!name) return showToast('Shop name is required', 'error');
     try {
       const { saveRestaurant } = await import('./firestore.js');
       await saveRestaurant({
