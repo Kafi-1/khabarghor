@@ -18,7 +18,8 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
-  writeBatch
+  writeBatch,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 import { db } from './firebase-config.js';
 
@@ -297,7 +298,29 @@ export async function getRestaurantOrders(restaurantId) {
   return mapDocs(await getDocs(q)).sort(byNewest);
 }
 
-/** Ready orders available for any rider to pick up */
+/** Atomically claim a ready order. Prevents two riders accepting the same order. */
+export async function acceptReadyOrder(orderId, riderId, riderDetails = {}) {
+  const orderRef = doc(db, 'orders', orderId);
+  const userRef = doc(db, 'users', riderId);
+  await runTransaction(db, async (tx) => {
+    const [orderSnap, userSnap] = await Promise.all([tx.get(orderRef), tx.get(userRef)]);
+    if (!orderSnap.exists()) throw new Error('Order no longer exists');
+    if (!userSnap.exists() || userSnap.data().role !== 'rider' || userSnap.data().riderOnline !== true) {
+      throw new Error('Go online with an active rider account before accepting orders');
+    }
+    const order = orderSnap.data();
+    if (order.status !== 'ready' || order.riderId) throw new Error('This order has already been accepted');
+    tx.update(orderRef, {
+      status: 'delivering',
+      riderId,
+      driverName: riderDetails.name || '',
+      driverPhone: riderDetails.phone || '',
+      updatedAt: serverTimestamp()
+    });
+  });
+}
+
+/** Ready orders available for any online rider to pick up */
 export async function getReadyOrders() {
   const q = query(collection(db, 'orders'), where('status', '==', 'ready'));
   return mapDocs(await getDocs(q)).filter(o => !o.riderId).sort(byNewest);
