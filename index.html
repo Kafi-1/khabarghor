@@ -11,13 +11,79 @@
   <title>Khabar Ghor - Local Khabar, Apnar Kache</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <style id="kg-splash-css">
+    html.kg-splashing{overflow:hidden}
+    #kg-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 38%,#f58a3c 0,#E85D04 52%,#b94503 100%);color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:opacity .4s ease,visibility .4s}
+    #kg-splash.kg-out{opacity:0;visibility:hidden}
+    #kg-splash .kg-s-logo{width:104px;height:104px;filter:drop-shadow(0 14px 26px rgba(0,0,0,.28));animation:kgPop .75s cubic-bezier(.2,1.5,.4,1) both,kgBob 2.4s ease-in-out .75s infinite}
+    #kg-splash .kg-steam path{fill:none;stroke:#E85D04;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:14;stroke-dashoffset:14;animation:kgSteam 1.7s ease-in-out infinite}
+    #kg-splash .kg-steam path:nth-child(2){animation-delay:.25s}
+    #kg-splash .kg-steam path:nth-child(3){animation-delay:.5s}
+    #kg-splash h1{margin:14px 0 0;font-size:1.9rem;font-weight:800;letter-spacing:-.04em;animation:kgUp .6s ease .3s both}
+    #kg-splash p{margin:0;font-size:.9rem;opacity:.85;animation:kgUp .6s ease .45s both}
+    #kg-splash .kg-dots{display:flex;gap:7px;margin-top:22px;animation:kgUp .6s ease .6s both}
+    #kg-splash .kg-dots i{width:9px;height:9px;border-radius:50%;background:#fff;opacity:.5;animation:kgDot 1s ease-in-out infinite}
+    #kg-splash .kg-dots i:nth-child(2){animation-delay:.15s}
+    #kg-splash .kg-dots i:nth-child(3){animation-delay:.3s}
+    @keyframes kgPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes kgBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes kgSteam{0%{stroke-dashoffset:14;opacity:0}40%{opacity:1}100%{stroke-dashoffset:-14;opacity:0}}
+    @keyframes kgUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes kgDot{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-7px);opacity:1}}
+  </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Khabar Ghor">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <link rel="modulepreload" href="js/firestore.js">
+  <link rel="modulepreload" href="js/firebase-config.js">
+  <link rel="modulepreload" href="js/utils.js">
+  <link rel="modulepreload" href="js/cart.js">
 </head>
 <body>
+  <!-- App-open loading screen (shown once per app launch) -->
+  <div id="kg-splash" role="status" aria-label="Loading Khabar Ghor">
+    <svg class="kg-s-logo" viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="16" fill="#fff"/>
+      <path d="M18 29h28c0 9-6.3 15-14 15s-14-6-14-15Z" fill="#E85D04"/>
+      <path d="M22 48h20" stroke="#E85D04" stroke-width="3" stroke-linecap="round"/>
+      <g class="kg-steam"><path d="M25 19c-3-3 2-4 0-7"/><path d="M32 19c-3-3 2-4 0-7"/><path d="M39 19c-3-3 2-4 0-7"/></g>
+    </svg>
+    <h1>Khabar Ghor</h1>
+    <p>Local Khabar, Apnar Kache</p>
+    <div class="kg-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+  <script>
+    (function () {
+      var el = document.getElementById('kg-splash');
+      try { if (sessionStorage.getItem('kg_splash')) { el.parentNode.removeChild(el); window.kgHideSplash = function () {}; return; } } catch (e) {}
+      document.documentElement.classList.add('kg-splashing');
+      var t0 = Date.now(), done = false;
+      window.kgHideSplash = function () {
+        if (done) return; done = true;
+        setTimeout(function () {
+          el.className += ' kg-out';
+          try { sessionStorage.setItem('kg_splash', '1'); } catch (e) {}
+          setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); document.documentElement.classList.remove('kg-splashing'); }, 450);
+        }, Math.max(0, 900 - (Date.now() - t0)));
+      };
+      setTimeout(window.kgHideSplash, 3500); // never stay stuck
+    })();
+  </script>
   <div class="app-container" id="app">
     <!-- Splash / Landing (shown first time or when not navigating) -->
     <div id="splash-view" class="splash-page" style="display:none;">
@@ -69,7 +135,9 @@
           </div>
         </div>
         <div class="kg-hero-visual">
-          <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&amp;fit=crop&amp;w=1000&amp;q=85" alt="Freshly prepared food ready to enjoy" fetchpriority="high">
+          <div class="kg-hero-art" id="hero-art" aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="120" height="120"><path d="M18 29h28c0 9-6.3 15-14 15s-14-6-14-15Z" fill="#fff"/><path d="M22 48h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M25 19c-3-3 2-4 0-7m7 7c-3-3 2-4 0-7m7 7c-3-3 2-4 0-7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
           <div class="kg-hero-note">Made fresh, just for you<small>Local flavour. Doorstep comfort.</small></div>
         </div>
       </section>
@@ -111,12 +179,13 @@
       <div id="bottom-nav"></div>
 
       <!-- WhatsApp Support floating button -->
-      <a href="https://wa.me/8801700000000" target="_blank" rel="noopener" class="wa-float" id="wa-support" aria-label="WhatsApp Support">
+      <a href="#" target="_blank" rel="noopener" class="wa-float" id="wa-support" aria-label="WhatsApp Support" style="display:none">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       </a>
     </div>
   </div>
 
   <script type="module" src="js/home.js"></script>
+  <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

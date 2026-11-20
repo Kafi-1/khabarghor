@@ -135,6 +135,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Push-notification device tokens (doc id = FCM token). Only the Cloud Function (admin SDK) reads them all.
+    match /fcm_tokens/{token} {
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow read, delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
     match /favorites/{id} {
       allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid;
       allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;

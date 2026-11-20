@@ -7,10 +7,26 @@
   <title>My Profile - Khabar Ghor</title>
   <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Khabar Ghor">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <link rel="modulepreload" href="js/auth.js">
+  <link rel="modulepreload" href="js/firestore.js">
+  <link rel="modulepreload" href="js/firebase-config.js">
+  <link rel="modulepreload" href="js/utils.js">
 </head>
 <body>
   <div class="app-container">
@@ -56,6 +72,20 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </div>
           <span class="profile-menu-text">Payment Method</span>
+          <span class="profile-menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span>
+        </a>
+        <a href="#" class="profile-menu-item" data-action="push">
+          <div class="profile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <span class="profile-menu-text">Order alerts (push)</span>
+          <span class="profile-menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span>
+        </a>
+        <a href="#" class="profile-menu-item" data-action="install" id="menu-install">
+          <div class="profile-menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>
+          </div>
+          <span class="profile-menu-text">Install app</span>
           <span class="profile-menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span>
         </a>
         <a href="#" class="profile-menu-item" data-action="voucher">
@@ -105,5 +135,6 @@
     <div id="bottom-nav"></div>
   </div>
   <script type="module" src="js/profile.js"></script>
+  <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

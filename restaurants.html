@@ -8,10 +8,28 @@
   <title>Restaurants - Khabar Ghor</title>
   <link rel="icon" href="assets/logo/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Khabar Ghor">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <link rel="modulepreload" href="js/firestore.js">
+  <link rel="modulepreload" href="js/utils.js">
+  <link rel="modulepreload" href="js/cart.js">
+  <link rel="modulepreload" href="js/firebase-config.js">
+  <link rel="modulepreload" href="js/auth.js">
 </head>
 <body>
   <div class="app-container">
@@ -59,5 +77,6 @@
   </div>
 
   <script type="module" src="js/restaurants.js"></script>
+  <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

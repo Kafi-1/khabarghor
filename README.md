@@ -61,3 +61,27 @@ Admin can override any status and assign rider name/phone.
 ## Deploy
 
 GitHub Pages / Firebase Hosting / Vercel. Add domain to Firebase Auth → Authorized domains.
+
+---
+
+## Install as an app (PWA)
+
+The site is installable: Android Chrome shows an **Install** banner (or ⋮ → *Install app*), iPhone: Share → *Add to Home Screen*.
+It has an app icon, a loading animation on launch, an offline page and fast repeat loads (service worker `sw.js`).
+
+To get a real **APK** for the Play Store / sharing, upload the live URL to <https://www.pwabuilder.com> → *Package for stores* → Android.
+
+## Push notifications (FCM)
+
+1. Firebase Console → Project settings → **Cloud Messaging** → *Web Push certificates* → **Generate key pair**. Paste the key into `VAPID_KEY` in `js/firebase-config.js`.
+2. Publish `firestore.rules` again (adds the `fcm_tokens` collection).
+3. Deploy the sender (needs the **Blaze** plan; free quota is plenty for a small shop):
+   ```bash
+   npm i -g firebase-tools && firebase login
+   cd functions && npm install && cd ..
+   firebase deploy --only functions
+   ```
+4. Open the app, log in, accept *"Get instant order updates"* (or Profile → Order alerts).
+
+Who gets alerts: shop owner + admin on a new order · customer on every status change · online riders when an order is *ready*.
+`ADMIN_EMAILS` in `functions/index.js` must match `js/firebase-config.js`.

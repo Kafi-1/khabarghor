@@ -9,6 +9,22 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/admin.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Khabar Ghor">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js">
+  <link rel="modulepreload" href="js/auth.js">
+  <link rel="modulepreload" href="js/firebase-config.js">
+  <link rel="modulepreload" href="js/firestore.js">
+  <link rel="modulepreload" href="js/utils.js">
+  <link rel="modulepreload" href="js/ui.js">
 </head>
 <body class="admin-body">
   <header class="adm-top">
@@ -21,5 +37,6 @@
   </header>
   <main id="rider-root" class="adm-main"><p class="adm-note">Loading…</p></main>
   <script type="module" src="js/rider.js"></script>
+  <script type="module" src="js/pwa.js"></script>
 </body>
 </html>
