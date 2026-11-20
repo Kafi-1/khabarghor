@@ -1,1 +1,10 @@
-şÙ©şHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿ÷îËb¢{?¥§$j£²‰
+{
+  "name": "khabarghor-functions",
+  "private": true,
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  }
+}
