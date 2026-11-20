@@ -1,1 +1,18 @@
-şÙ©şHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿöš)ÿ™©â}ë-Ê'
+{
+  "id": "./",
+  "name": "Khabar Ghor Admin",
+  "short_name": "KG Admin",
+  "description": "Khabar Ghor admin panel.",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1F2937",
+  "theme_color": "#1F2937",
+  "lang": "en",
+  "icons": [
+    { "src": "../assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
