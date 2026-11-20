@@ -26,8 +26,8 @@ export async function uploadToImgBB(file) {
   if (!json.success || !json.data?.url) {
     throw new Error(json.error?.message || 'Upload failed');
   }
-  // Prefer medium display URL; fall back to full
-  return json.data.display_url || json.data.url;
+  // Prefer the medium-size image (much faster on mobile data); fall back to full size
+  return json.data.medium?.url || json.data.display_url || json.data.url;
 }
 
 /**

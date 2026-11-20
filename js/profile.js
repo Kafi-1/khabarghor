@@ -9,6 +9,10 @@ import { ADMIN_EMAILS } from './firebase-config.js';
 import { escapeHtml } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Already running as the installed app? Hide the install item.
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    document.getElementById('menu-install')?.remove();
+  }
   document.getElementById('bottom-nav').innerHTML = renderBottomNav('profile');
 
   onAuthReady(async (user) => {
@@ -90,6 +94,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
         })();
+        return;
+      }
+      if (action === 'push') {
+        const user = getCurrentUser();
+        if (!user) { window.location.href = 'login.html'; return; }
+        (async () => {
+          const msg = await import('./messaging.js');
+          if (!msg.pushConfigured()) { showToast('Push notifications are not set up yet', 'info'); return; }
+          if (!(await msg.pushSupported())) { showToast('This browser cannot show push alerts. On iPhone, install the app first.', 'info', 5000); return; }
+          if (msg.pushPermission() === 'denied') { showToast('Notifications are blocked. Allow them in your browser/app settings.', 'error', 5000); return; }
+          const r = msg.pushPermission() === 'granted' ? await msg.syncToken(user) : await msg.enablePush(user);
+          showToast(r.ok ? 'Order alerts are on 🔔' : 'Could not turn on alerts', r.ok ? 'success' : 'error');
+        })();
+        return;
+      }
+      if (action === 'install') {
+        if (window.kgPWA?.canInstall()) { window.kgPWA.install(); return; }
+        showToast('Open your browser menu (⋮ or Share) and tap "Add to Home screen"', 'info', 5000);
         return;
       }
       if (action === 'edit-profile') {

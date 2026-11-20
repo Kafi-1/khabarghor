@@ -146,6 +146,8 @@ export async function resetPassword(email) {
 
 export async function logout() {
   try {
+    // stop order alerts for this account on this phone
+    try { (await import('./messaging.js')).unlinkPush(); } catch { /* optional */ }
     await signOut(auth);
     showToast('You have logged out', 'info');
     window.location.href = 'index.html';

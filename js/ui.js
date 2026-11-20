@@ -147,7 +147,7 @@ export function renderRestaurantCard(restaurant, options = {}) {
   return `
     <a href="restaurant.html?id=${restaurant.id}" class="restaurant-card" data-id="${restaurant.id}">
       <div class="restaurant-card-image">
-        ${restaurant.image ? `<img src="${escapeHtml(restaurant.image)}" alt="${escapeHtml(restaurant.name)}" loading="lazy">` : '<div class="pt-noimg">🍽️</div>'}
+        ${restaurant.image ? `<img src="${escapeHtml(restaurant.image)}" alt="${escapeHtml(restaurant.name)}" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">` : '<div class="pt-noimg">🍽️</div>'}
         ${showFavourite ? `
           <button class="favorite-btn ${isFavourite ? 'active' : ''}" 
                   data-id="${restaurant.id}" 
@@ -185,7 +185,7 @@ export function renderFoodCard(product, options = {}) {
     <div class="food-card" data-id="${product.id}">
       <a href="product.html?id=${encodeURIComponent(product.id)}" class="food-card-link" style="text-decoration:none;color:inherit;display:block;">
         <div class="food-card-image">
-          ${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy">` : '<div class="pt-noimg">🍽️</div>'}
+          ${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">` : '<div class="pt-noimg">🍽️</div>'}
         </div>
         <div class="food-card-body">
           <h4 class="food-name">${escapeHtml(product.name)}</h4>
@@ -209,7 +209,7 @@ export function renderFoodCard(product, options = {}) {
 // ==================== PRODUCT TILE (home grid) ====================
 export function renderProductTile(p) {
   const img = p.image
-    ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy">`
+    ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">`
     : '<div class="pt-noimg">🍽️</div>';
   return `
     <div class="product-tile" data-id="${p.id}" role="link" tabindex="0">
@@ -269,7 +269,7 @@ export function renderCartItem(item) {
   return `
     <div class="cart-item" data-id="${item.id}">
       <div class="cart-item-image">
-        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy">` : '<div class="pt-noimg">🍽️</div>'}
+        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">` : '<div class="pt-noimg">🍽️</div>'}
       </div>
       <div class="cart-item-details">
         <h4 class="cart-item-name">${escapeHtml(item.name)}</h4>
@@ -311,7 +311,7 @@ export function renderOrderCard(order) {
     <a href="order-tracking.html?id=${order.id}" class="order-card">
       <div class="order-card-header">
         <div class="order-restaurant">
-          ${order.restaurantImage ? `<img src="${escapeHtml(order.restaurantImage)}" alt="" class="order-resto-img" loading="lazy">` : '<div class="order-resto-img pt-noimg">🍽️</div>'}
+          ${order.restaurantImage ? `<img src="${escapeHtml(order.restaurantImage)}" alt="" class="order-resto-img" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">` : '<div class="order-resto-img pt-noimg">🍽️</div>'}
           <div>
             <h4>${escapeHtml(order.restaurantName || 'Restaurant')}</h4>
             <p class="order-date">${dateStr}</p>

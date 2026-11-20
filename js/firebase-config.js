@@ -27,8 +27,14 @@ export const isFirebaseConfigured = !firebaseConfig.apiKey.startsWith('YOUR_');
 // Admin emails — must match firestore.rules
 export const ADMIN_EMAILS = ['info@khabarghor.agi.bd'];
 
-// WhatsApp support number (country code + number, no + or spaces)
-// Change this to your real number, e.g. '88017XXXXXXXX'
-export const SUPPORT_WHATSAPP = '8801700000000';
+// WhatsApp support number (country code + number, no + or spaces), e.g. '8801712345678'.
+// Leave empty to hide the WhatsApp buttons.
+export const SUPPORT_WHATSAPP = '';
+export const WHATSAPP_READY = /^8801[3-9]\d{8}$/.test(SUPPORT_WHATSAPP);
+
+// Push notifications (FCM): Firebase Console -> Project settings -> Cloud Messaging
+// -> Web Push certificates -> "Generate key pair", then paste the public key here.
+// Leave empty to keep push notifications switched off.
+export const VAPID_KEY = 'BPLd9Pl8XBMaGCX6jgJRa6aAJcYXfSD8PsLlbTYG7SQM6BjSYmEk8y01EaUELQhJZRYsmbijU5922yhMzYexX70';
 
 export { app, auth, db };
