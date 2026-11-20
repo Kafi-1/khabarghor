@@ -110,3 +110,10 @@ export function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+/** "39" -> "39 min", "30-40" -> "30-40 min", anything else is shown as typed */
+export function formatDelivery(v) {
+  const t = String(v ?? '').trim();
+  if (!t) return '';
+  return /^\d+(\s*-\s*\d+)?$/.test(t) ? t + ' min' : t;
+}

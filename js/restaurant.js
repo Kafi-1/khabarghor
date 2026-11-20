@@ -4,7 +4,7 @@
 
 import { renderFoodCard, showToast } from './ui.js';
 import { getRestaurant, getProductsByRestaurant, isFavourite, toggleFavourite, getReviewsByRestaurant } from './firestore.js';
-import { getQueryParam, formatNumber, escapeHtml, showError } from './utils.js';
+import { formatDelivery, getQueryParam, formatNumber, escapeHtml, showError } from './utils.js';
 import { addToCart, getCartCount, calculateTotal, updateCartBadge } from './cart.js';
 import { formatCurrency } from './utils.js';
 import { onAuthReady, getCurrentUser } from './auth.js';
@@ -23,15 +23,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadRestaurant(id) {
   const container = document.getElementById('restaurant-content');
   try {
-    const restaurant = await getRestaurant(id);
+    // fetch everything at the same time (faster than one after another)
+    const [restaurant, products, reviewList] = await Promise.all([
+      getRestaurant(id),
+      getProductsByRestaurant(id),
+      getReviewsByRestaurant(id).catch(() => [])
+    ]);
     if (!restaurant || restaurant.active === false) {
       showError(container, 'Restaurant not found');
       return;
     }
-    const [products, reviewList] = await Promise.all([
-      getProductsByRestaurant(id),
-      getReviewsByRestaurant(id).catch(() => [])
-    ]);
     // Customers can't write the restaurant's rating (security rules), so calculate it from the reviews
     const reviewCount = reviewList.length || restaurant.reviewCount || 0;
     const avgRating = reviewList.length
@@ -70,7 +71,7 @@ async function loadRestaurant(id) {
         <h1>${escapeHtml(restaurant.name)}</h1>
         <div class="restaurant-info-meta">
           ${avgRating ? `<span class="rating">⭐ ${avgRating} (${formatNumber(reviewCount)})</span>` : ''}
-          ${restaurant.deliveryTime ? `<span>⏱ ${escapeHtml(restaurant.deliveryTime)}</span>` : ''}
+          ${restaurant.deliveryTime ? `<span>⏱ ${escapeHtml(formatDelivery(restaurant.deliveryTime))}</span>` : ''}
           ${restaurant.distance ? `<span>📍 ${restaurant.distance} km</span>` : ''}
           ${restaurant.status === 'closed' ? '<span style="color:#c62828;font-weight:600">Closed</span>' : restaurant.status === 'busy' ? '<span style="color:#ef6c00;font-weight:600">Busy</span>' : ''}
         </div>
@@ -118,7 +119,7 @@ async function loadRestaurant(id) {
           <p>${escapeHtml(restaurant.description || 'No description.')}</p>
           ${restaurant.address ? `<p style="margin-top:12px"><strong>Address:</strong> ${escapeHtml(restaurant.address)}</p>` : ''}
           ${restaurant.phone ? `<p><strong>Phone:</strong> <a href="tel:${escapeHtml(restaurant.phone)}">${escapeHtml(restaurant.phone)}</a></p>` : ''}
-          ${restaurant.deliveryTime ? `<p><strong>Delivery:</strong> ${escapeHtml(restaurant.deliveryTime)}</p>` : ''}
+          ${restaurant.deliveryTime ? `<p><strong>Delivery:</strong> ${escapeHtml(formatDelivery(restaurant.deliveryTime))}</p>` : ''}
         </div>`;
         return;
       }

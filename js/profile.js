@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user) {
       document.getElementById('login-btn').style.display = 'none';
       document.getElementById('logout-btn').style.display = 'block';
+      document.getElementById('edit-profile-btn').hidden = false;
 
       let name = user.displayName || user.email?.split('@')[0] || 'User';
       let phone = user.phoneNumber || user.email || '';
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       document.getElementById('profile-name').textContent = 'Guest';
+      document.getElementById('edit-profile-btn').hidden = true;
       document.getElementById('profile-phone').textContent = 'Login to see your profile';
       document.getElementById('login-btn').style.display = 'block';
       document.getElementById('logout-btn').style.display = 'none';

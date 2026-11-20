@@ -2,7 +2,7 @@
  * Khabar Ghor - UI Components & Helpers
  */
 
-import { formatCurrency, formatNumber, escapeHtml } from './utils.js';
+import { formatDelivery, formatCurrency, formatNumber, escapeHtml } from './utils.js';
 
 // ==================== TOAST ====================
 export function showToast(message, type = 'info', duration = 3000) {
@@ -141,7 +141,7 @@ export function renderRestaurantCard(restaurant, options = {}) {
 
   const rating = restaurant.rating || 0;
   const reviewCount = formatNumber(restaurant.reviewCount || 0);
-  const deliveryTime = restaurant.deliveryTime || '';
+  const deliveryTime = formatDelivery(restaurant.deliveryTime);
   const distance = restaurant.distance ? `${restaurant.distance} km` : '';
 
   return `
@@ -183,7 +183,7 @@ export function renderFoodCard(product, options = {}) {
 
   return `
     <div class="food-card" data-id="${product.id}">
-      <a href="product.html?id=${encodeURIComponent(product.id)}" class="food-card-link" style="text-decoration:none;color:inherit;display:block;">
+      <a href="product.html?id=${encodeURIComponent(product.id)}" class="food-card-link">
         <div class="food-card-image">
           ${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" data-lz onload="this.classList.add('img-loaded')" onerror="this.classList.add('img-loaded')">` : '<div class="pt-noimg">🍽️</div>'}
         </div>
@@ -197,7 +197,7 @@ export function renderFoodCard(product, options = {}) {
         </div>
       </a>
       ${showAdd ? `
-        <div class="pt-actions" style="margin:0 12px 12px;width:auto">
+        <div class="pt-actions">
           <button class="btn-add" data-id="${product.id}" aria-label="Add to cart">+ Cart</button>
           <button class="btn-buy" data-id="${product.id}" aria-label="Buy now">Buy Now</button>
         </div>

@@ -25,7 +25,7 @@ const db = getFirestore(app);
 export const isFirebaseConfigured = !firebaseConfig.apiKey.startsWith('YOUR_');
 
 // Admin emails — must match firestore.rules
-export const ADMIN_EMAILS = ['info@khabarghor.agi.bd'];
+export const ADMIN_EMAILS = ['admin@gmail.com'];
 
 // WhatsApp support number (country code + number, no + or spaces), e.g. '8801712345678'.
 // Leave empty to hide the WhatsApp buttons.
