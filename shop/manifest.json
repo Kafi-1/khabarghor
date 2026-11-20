@@ -1,1 +1,18 @@
-þÙ©þHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿû!¢ŸæjxŸzËc²‰
+{
+  "id": "./",
+  "name": "Khabar Ghor Shop",
+  "short_name": "KG Shop",
+  "description": "Khabar Ghor restaurant panel.",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#B45309",
+  "theme_color": "#B45309",
+  "lang": "en",
+  "icons": [
+    { "src": "../assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
