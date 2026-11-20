@@ -1,1 +1,214 @@
-þÙ©þHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿ÷â­ë-¢·«ºW¬
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in ['admin@gmail.com', 'info@khabarghor.agi.bd'];
+    }
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isActiveAccount() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userData().disabled != true;
+    }
+    function isRestaurantOwner() { return isActiveAccount() && userData().role == 'restaurant'; }
+    function isRider() { return isActiveAccount() && userData().role == 'rider'; }
+    function ownsRestaurant(id) {
+      return isRestaurantOwner() && get(/databases/$(database)/documents/restaurants/$(id)).data.ownerId == request.auth.uid;
+    }
+    function validUserCreate(userId) {
+      return signedIn() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'name','email','phone','photoURL','address','createdAt','updatedAt'
+        ])
+        && (!('role' in request.resource.data) || request.resource.data.role == 'customer');
+    }
+    function safeUserUpdate(userId) {
+      return isActiveAccount() && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name','phone','photoURL','address','riderOnline','updatedAt'
+        ]);
+    }
+    function shopMayUpdateOrder() {
+      return isRestaurantOwner()
+        && resource.data.restaurantId == userData().restaurantId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status','cancelReason','riderId','driverName','driverPhone','updatedAt'
+        ])
+        && (
+          (resource.data.status == 'pending' && request.resource.data.status in ['accepted','cancelled']) ||
+          (resource.data.status == 'accepted' && request.resource.data.status in ['preparing','cancelled']) ||
+          (resource.data.status == 'preparing' && request.resource.data.status in ['ready','cancelled']) ||
+          // shop hands a ready order straight to a chosen rider
+          (resource.data.status == 'ready'
+            && !('riderId' in resource.data)
+            && request.resource.data.status == 'delivering'
+            && request.resource.data.riderId is string
+            && request.resource.data.riderId.size() > 0)
+        );
+    }
+    // Shop's "Notify riders" button: only bumps ridersPing so the backend re-alerts riders.
+    function shopMayPingRiders() {
+      return isRestaurantOwner()
+        && resource.data.restaurantId == userData().restaurantId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ridersPing','updatedAt']);
+    }
+    function customerMayCancelOrder() {
+      return isActiveAccount()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelReason','updatedAt']);
+    }
+    function riderMayUpdateOrder() {
+      return isRider()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status','riderId','driverName','driverPhone','riderEarning','updatedAt'
+        ])
+        && (
+          (resource.data.status == 'ready'
+            && !('riderId' in resource.data)
+            && userData().riderOnline == true
+            && request.resource.data.status == 'delivering'
+            && request.resource.data.riderId == request.auth.uid)
+          ||
+          (resource.data.riderId == request.auth.uid
+            && resource.data.status == 'delivering'
+            && request.resource.data.status == 'completed'
+            && request.resource.data.riderId == resource.data.riderId)
+        );
+    }
+
+    match /restaurants/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        ownsRestaurant(id)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name','description','image','coverImage','address','phone',
+          'deliveryTime','status','minOrder','updatedAt'
+        ])
+      );
+    }
+
+    match /products/{id} {
+      function validImages() {
+        return !('images' in request.resource.data)
+          || (request.resource.data.images is list && request.resource.data.images.size() <= 5);
+      }
+      allow read: if true;
+      allow create: if (isAdmin() || (
+        isRestaurantOwner()
+        && request.resource.data.restaurantId == userData().restaurantId
+        && ownsRestaurant(request.resource.data.restaurantId)
+        && request.resource.data.keys().hasOnly([
+          'name','price','restaurantId','restaurantName','category','image','images',
+          'description','available','createdAt','updatedAt'
+        ])
+      )) && validImages();
+      allow update: if (isAdmin() || (
+        ownsRestaurant(resource.data.restaurantId)
+        && request.resource.data.restaurantId == resource.data.restaurantId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name','price','restaurantName','category','image','images','description','available','updatedAt'
+        ])
+      )) && validImages();
+      allow delete: if isAdmin() || ownsRestaurant(resource.data.restaurantId);
+    }
+
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // A restaurant owner may read online rider profiles so the shop can assign one.
+      allow read: if signedIn() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        (isRestaurantOwner() && resource.data.role == 'rider' && resource.data.riderOnline == true)
+      );
+      allow create: if validUserCreate(userId) || isAdmin();
+      allow update: if safeUserUpdate(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if isActiveAccount()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasAll([
+          'userId','restaurantId','restaurantName','items','subtotal','total','address','paymentMethod','status'
+        ])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0;
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        (isRestaurantOwner() && resource.data.restaurantId == userData().restaurantId) ||
+        (isRider() && (resource.data.riderId == request.auth.uid ||
+          (resource.data.status == 'ready' && userData().riderOnline == true)))
+      );
+      allow update: if isAdmin() || shopMayUpdateOrder() || shopMayPingRiders() || riderMayUpdateOrder() || customerMayCancelOrder();
+      allow delete: if isAdmin();
+    }
+
+    // Push-notification device tokens (doc id = FCM token). Only the Cloud Function (admin SDK) reads them all.
+    match /fcm_tokens/{token} {
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow read, delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    match /favorites/{id} {
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // App settings: delivery fee, service fee, rider commission. Public read, admin write.
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Home slider banners: public read, admin write.
+    match /banners/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /coupons/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      // A customer may only bump usedCount by exactly 1 (coupon use after an order)
+      allow update: if isAdmin() || (
+        isActiveAccount()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount'])
+        && request.resource.data.usedCount == resource.data.get('usedCount', 0) + 1
+      );
+    }
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
+      allow update, delete: if isAdmin();
+    }
+    match /support_tickets/{id} {
+      allow create: if isActiveAccount() && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

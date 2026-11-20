@@ -1,1 +1,13 @@
-şÙ©şHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿ÷â­ë-¢·¢×±zÈì¢
+{
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "riderOnline", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
