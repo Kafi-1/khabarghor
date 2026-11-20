@@ -1,1 +1,150 @@
-þÙ©þHZmªà†Šì­Ïä…¦Ú®h®f¢Ÿøìþ) m¸ì
+/**
+ * ImgBB image upload â€“ returns hosted URL to save in Firestore
+ * API key is public (client-side); restrict by domain in production if needed.
+ */
+const IMGBB_KEY = '6139c158477e6005d50817a32aedb031';
+
+/**
+ * Upload a File to ImgBB. Returns the display URL string.
+ */
+export async function uploadToImgBB(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    throw new Error('Please select an image file');
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error('Image must be under 8 MB');
+  }
+
+  const form = new FormData();
+  form.append('image', file);
+
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+    method: 'POST',
+    body: form
+  });
+  const json = await res.json();
+  if (!json.success || !json.data?.url) {
+    throw new Error(json.error?.message || 'Upload failed');
+  }
+  // Prefer the medium-size image (much faster on mobile data); fall back to full size
+  return json.data.medium?.url || json.data.display_url || json.data.url;
+}
+
+/**
+ * Build a reusable upload field HTML + bind events.
+ * container: element that will hold the UI
+ * onUploaded(url): called when upload succeeds
+ * currentUrl: existing image URL (optional)
+ */
+export function bindImageUpload(container, { onUploaded, currentUrl = '' } = {}) {
+  container.innerHTML = `
+    <div class="img-upload-wrap">
+      <div class="img-upload-preview" id="img-prev">
+        ${currentUrl
+          ? `<img src="${currentUrl.replace(/"/g, '')}" alt="Preview">`
+          : `<span class="img-upload-placeholder">ðŸ“· No image</span>`}
+      </div>
+      <div class="img-upload-actions">
+        <label class="adm-btn primary img-upload-btn">
+          Choose image
+          <input type="file" accept="image/*" id="img-file" hidden>
+        </label>
+        <button type="button" class="adm-btn" id="img-clear" ${currentUrl ? '' : 'style="display:none"'}>Remove</button>
+        <span class="img-upload-status" id="img-status"></span>
+      </div>
+      <input type="hidden" id="img-url" value="${(currentUrl || '').replace(/"/g, '&quot;')}">
+    </div>`;
+
+  const fileInput = container.querySelector('#img-file');
+  const status = container.querySelector('#img-status');
+  const prev = container.querySelector('#img-prev');
+  const hidden = container.querySelector('#img-url');
+  const clearBtn = container.querySelector('#img-clear');
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    status.textContent = 'Uploadingâ€¦';
+    status.style.color = 'var(--text-muted)';
+    try {
+      const url = await uploadToImgBB(file);
+      hidden.value = url;
+      prev.innerHTML = `<img src="${url}" alt="Preview">`;
+      clearBtn.style.display = '';
+      status.textContent = 'Uploaded âœ“';
+      status.style.color = '#2e7d32';
+      if (onUploaded) onUploaded(url);
+    } catch (e) {
+      status.textContent = e.message || 'Upload failed';
+      status.style.color = '#c62828';
+    }
+    fileInput.value = '';
+  });
+
+  clearBtn.addEventListener('click', () => {
+    hidden.value = '';
+    prev.innerHTML = `<span class="img-upload-placeholder">ðŸ“· No image</span>`;
+    clearBtn.style.display = 'none';
+    status.textContent = '';
+    if (onUploaded) onUploaded('');
+  });
+}
+
+export function getUploadedImageUrl(container) {
+  return container?.querySelector('#img-url')?.value?.trim() || '';
+}
+
+/**
+ * Multi-photo uploader (max `max` photos). The first photo is used as the cover.
+ * Read the result with getGalleryImages(container).
+ */
+export function bindImageGallery(container, { currentImages = [], max = 5 } = {}) {
+  let images = (currentImages || []).filter(Boolean).slice(0, max);
+  const esc = (v) => String(v || '').replace(/"/g, '&quot;');
+
+  function draw(status = '') {
+    container.innerHTML = `
+      <div class="img-gallery">
+        ${images.map((u, i) => `
+          <div class="img-gallery-item" data-url="${esc(u)}">
+            <img src="${esc(u)}" alt="">
+            ${i === 0 ? '<span class="img-gallery-cover">Cover</span>' : ''}
+            <button type="button" class="img-gallery-x" data-i="${i}" aria-label="Remove photo">Ã—</button>
+          </div>`).join('')}
+        ${images.length < max ? `
+          <label class="img-gallery-add">
+            <span>ï¼‹</span>
+            <input type="file" accept="image/*" hidden>
+          </label>` : ''}
+      </div>
+      <div class="img-upload-status">${status}</div>`;
+
+    const fileInput = container.querySelector('.img-gallery-add input');
+    if (fileInput) fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      draw('<span style="color:var(--text-muted)">Uploading...</span>');
+      try {
+        const url = await uploadToImgBB(file);
+        images.push(url);
+        draw('<span style="color:#2e7d32">Uploaded âœ“</span>');
+      } catch (e) {
+        draw(`<span style="color:#c62828">${e.message || 'Upload failed'}</span>`);
+      }
+    });
+
+    container.querySelectorAll('.img-gallery-x').forEach(btn => {
+      btn.onclick = () => {
+        images.splice(Number(btn.dataset.i), 1);
+        draw();
+      };
+    });
+  }
+
+  draw();
+  container._galleryImages = () => images.slice();
+}
+
+export function getGalleryImages(container) {
+  return container?._galleryImages ? container._galleryImages() : [];
+}
