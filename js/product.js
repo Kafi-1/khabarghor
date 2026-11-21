@@ -2,7 +2,7 @@
  * Khabar Ghor - Product Detail Page
  * Shows image, name, price, description, delivery time, restaurant, category etc.
  */
-import { getProduct, getRestaurant } from './firestore.js';
+import { getProduct, getRestaurant, getCachedProduct } from './firestore.js';
 import { getQueryParam, formatCurrency, escapeHtml, showError } from './utils.js';
 import { addToCart, updateCartBadge } from './cart.js';
 
@@ -22,18 +22,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadProduct(id) {
   const container = document.getElementById('product-content');
+
+  // 1) Paint instantly from what the previous page already loaded
+  const cachedProduct = getCachedProduct(id);
+  if (cachedProduct && cachedProduct.available !== false) {
+    product = cachedProduct;
+    paint(container);
+  }
+
   try {
+    // 2) Fresh data (fast – cached for 90s after the first visit)
     product = await getProduct(id);
     if (!product || product.available === false) {
       showError(container, 'Product not found or unavailable');
       return;
     }
-
-    if (product.restaurantId) {
-      restaurant = await getRestaurant(product.restaurantId);
-    }
-
     document.title = `${product.name} - Khabar Ghor`;
+    paint(container);
+
+    // 3) Restaurant details fill in afterwards, without blocking the first paint
+    if (product.restaurantId) {
+      const r = await getRestaurant(product.restaurantId).catch(() => null);
+      if (r) { restaurant = r; paint(container); }
+    }
+  } catch (err) {
+    console.error(err);
+    if (!product) showError(container, 'Could not load product. Check internet / Firebase.');
+  }
+}
+
+function paint(container) {
 
     const photos = (product.images?.length ? product.images : (product.image ? [product.image] : [])).slice(0, 5);
     const img = photos.length > 1
@@ -98,13 +116,9 @@ async function loadProduct(id) {
       </div>
     `;
 
-    document.getElementById('product-action-bar').classList.remove('hidden');
-    bindGallery();
-    bindActions();
-  } catch (err) {
-    console.error(err);
-    showError(container, 'Could not load product. Check internet / Firebase.');
-  }
+  document.getElementById('product-action-bar').classList.remove('hidden');
+  bindGallery();
+  bindActions();
 }
 
 function bindGallery() {
@@ -119,6 +133,7 @@ function bindGallery() {
 
 function bindActions() {
   const qtyEl = document.getElementById('pd-qty');
+  qtyEl.textContent = qty;
   document.getElementById('pd-minus').onclick = () => {
     if (qty > 1) { qty--; qtyEl.textContent = qty; }
   };

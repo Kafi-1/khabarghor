@@ -63,8 +63,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // ---- endless scroll: keep loading more food as you swipe down ----
-  window.addEventListener('scroll', maybeExtendFeed, { passive: true });
+  // ---- preload the product page on touch, so the tap feels instant ----
+  let prefetched = false;
+  const prefetchProductPage = () => {
+    if (prefetched) return;
+    prefetched = true;
+    for (const href of ['product.html', 'js/product.js']) {
+      const l = document.createElement('link');
+      l.rel = 'prefetch';
+      l.href = href;
+      document.head.appendChild(l);
+    }
+  };
+  grid.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.pt-link, .food-card-link')) prefetchProductPage();
+  }, { passive: true, once: false });
 
   // ---- event listeners first, so the page is usable while data loads ----
   const searchInput = document.getElementById('home-search');
@@ -203,11 +216,6 @@ function renderCategories(catNames) {
   container.innerHTML = ['All', ...names].map(n => renderCategoryItem({ id: n, name: n }, n === activeCategory)).join('');
 }
 
-/* -------- Endless product feed -------- */
-const FEED_BATCH = 8;
-let feed = { list: [], idx: 0 };
-let lastAppend = 0;
-
 function render() {
   const grid = document.getElementById('products-grid');
   const list = allProducts.filter(p =>
@@ -218,38 +226,10 @@ function render() {
 
   document.getElementById('menu-title').textContent = activeCategory === 'All' ? 'Our Menu' : activeCategory;
 
-  feed = { list, idx: 0 };
-  grid.innerHTML = '';
-
   if (!allProducts.length) {
     showEmpty(grid, 'No food items yet. Add products from the admin panel.', '🍽️');
     return;
   }
   if (!list.length) { showEmpty(grid, 'Nothing found', '🔍'); return; }
-  appendFeed();
-}
-
-/** Append the next batch; when the list runs out it starts over, so the feed never ends. */
-function appendFeed() {
-  const grid = document.getElementById('products-grid');
-  if (!feed.list.length) return;
-  const html = [];
-  for (let i = 0; i < FEED_BATCH; i++) {
-    html.push(renderProductTile(feed.list[feed.idx % feed.list.length]));
-    feed.idx++;
-  }
-  grid.insertAdjacentHTML('beforeend', html.join(''));
-  if (grid.children.length > 600) {
-    for (let i = 0; i < 200; i++) grid.firstElementChild?.remove();
-  }
-}
-
-function maybeExtendFeed() {
-  if (!feed.list.length) return;
-  const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 900;
-  if (!nearBottom) return;
-  const now = Date.now();
-  if (now - lastAppend < 250) return;
-  lastAppend = now;
-  appendFeed();
+  grid.innerHTML = list.map(p => renderProductTile(p)).join('');
 }

@@ -241,6 +241,20 @@ export async function getProductsByRestaurant(restaurantId) {
   return result;
 }
 
+/** Instant: reuse the product already loaded by the home / restaurant page. */
+export function getCachedProduct(id) {
+  const one = cacheGet('product_' + id);
+  if (one) return one;
+  for (const key of ['products', 'products_all']) {
+    const list = cacheGet(key);
+    if (Array.isArray(list)) {
+      const hit = list.find(p => p.id === id);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
 export async function getProduct(id) {
   const key = 'product_' + id;
   const cached = cacheGet(key);
