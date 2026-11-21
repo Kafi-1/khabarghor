@@ -137,7 +137,7 @@ async function networkFirstPage(req) {
   try {
     const res = await Promise.race([
       net,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1800))
     ]);
     if (res && res.ok) cache.put(req, res.clone());
     return res;
